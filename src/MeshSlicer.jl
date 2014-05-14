@@ -1,6 +1,6 @@
 module MeshSlicer
 
-#Setup types
+# Setup types
 type Face
     vertices::Array
     normal::Array{Float64}
@@ -21,6 +21,9 @@ type Volume
     faces::Array{Face}
 end
 
+# End Type Setup
+
+
 function sliceSTL(path::String)
     file = open(path, "r")
     
@@ -33,7 +36,7 @@ function getvolume(m::IOStream)
     # create a volume representation 
     
     faces = Face[]
-    bounds = Bounds(0,0,0,0,0,0)
+    bounds = Bounds(0,0,0,Inf,Inf,Inf)
     
     while !eof(m)
         f = getface(m)
@@ -59,7 +62,7 @@ function updatebounds!(box, face)
     box.maxZ = max(face.vertices[zordering[3]][3], box.maxZ)
 end
 
-function getface(m::IOStream)
+function getface(m)
     #  facet normal -1 0 0
     #    outer loop
     #      vertex 0 0 10
@@ -84,17 +87,18 @@ function getface(m::IOStream)
     else
         return Nothing
     end
-    
 end
 
 function findorder(vertices::Array, index)
     # findheights
     # Given an array of vectors, return an ordered list of their maximum values.
-    heights = ones(3)
+    heights = [1,1,1]
     for i = 1:3
         if vertices[i][index] < vertices[heights[1]][index] #min
+            heights[2] = heights[1]
             heights[1] = i
         elseif vertices[i][index] > vertices[heights[3]][index] #max
+            heights[2] = heights[3]
             heights[3] = i
         elseif vertices[i][index] == vertices[heights[1]][index] #same as min
             heights[2] = heights[1]
