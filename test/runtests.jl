@@ -4,8 +4,8 @@ using Base.Test
 # write your own tests here
 
 # setup test handlers
-test_handler(r::Test.Success) = println("Test success on: $(r.expr)")
-test_handler(r::Test.Failure) = error("Test fail at: $(r.expr)")
+test_handler(r::Test.Success) = println("Test success: $(r.expr)")
+test_handler(r::Test.Failure) = error("Test fail: $(r.expr)")
 test_handler(r::Test.Error) = rethrow(r)
 
 
