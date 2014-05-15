@@ -21,15 +21,60 @@ type Volume
     faces::Array{Face}
 end
 
+type LineSegment
+    start::Array{Float64}
+    finish::Array{Float64}
+    layer::Float64
+end
+
+type UnstitchedPolygon
+    segments::Array{LineSegment}
+    layer::Float64
+end
+
+
 # End Type Setup
 
 
-function sliceSTL(path::String)
+function sliceSTL(path::String, thickness::Float64)
     file = open(path, "r")
-    
+
     volume = getvolume(file)
-    
-    println(volume)
+
+    startZ = volume.bounds.minZ
+
+    #We can only print an integer number of layers
+    layercount = round((volume.bounds.maxZ - volume.bounds.minZ)/thickness)
+
+    #Adjust sliceheight
+    sliceheight = (volume.bounds.maxZ - volume.bounds.minZ)/layercount
+
+    layers = [volume.bounds.minZ:sliceheight:volume.bounds.maxZ]
+
+    segmentlist = Array(UnstitchedPolygon,convert(Int64,layercount))
+
+    for i = 1:layercount
+        segmentlist[i] = UnstitchedPolygon(LineSegment[],layers[i])
+    end
+
+    #println(segmentlist)
+    for face in volume.faces
+
+        initialSlice = convert(Int64, floor((face.vertices[face.heights[1]][3] - volume.bounds.minZ)/sliceheight))
+        finalSlice = convert(Int64, floor((face.vertices[face.heights[3]][3] - volume.bounds.minZ)/sliceheight))
+
+        locallayer = layers[initialSlice+1:finalSlice]
+
+        index = initialSlice + 1
+        for layer in locallayer
+            seg = sliceface(face, layer)
+            if seg != Nothing
+                push!(segmentlist[index].segments, seg)
+            end
+            index = index + 1
+        end
+    end
+    return (segmentlist)
 end
 
 function getvolume(m::IOStream)
@@ -49,7 +94,7 @@ function getvolume(m::IOStream)
     return Volume(bounds, faces)
 end
 
-function updatebounds!(box, face)
+function updatebounds!(box::Bounds, face)
     xordering = findorder(face.vertices, 1)
     yordering = findorder(face.vertices, 2)
     zordering = face.heights
@@ -62,7 +107,7 @@ function updatebounds!(box, face)
     box.maxZ = max(face.vertices[zordering[3]][3], box.maxZ)
 end
 
-function getface(m)
+function getface(m::IOStream)
     #  facet normal -1 0 0
     #    outer loop
     #      vertex 0 0 10
@@ -111,14 +156,38 @@ function findorder(vertices::Array, index)
     return heights
 end
 
+function sliceface(f::Face, z::Float64)
+
+    p0 = f.vertices[1]
+    p1 = f.vertices[2]
+    p2 = f.vertices[3]
+
+    if p0[3] < z && p1[3] >= z && p2[3] >= z
+        return getlinesegment(p0, p2, p1, z)
+    elseif p0[3] > z && p1[3] < z && p2[3] < z
+        return getlinesegment(p0, p1, p2, z)
+    elseif p1[3] < z && p0[3] >= z && p2[3] >= z
+        return getlinesegment(p1, p0, p2, z)
+    elseif p1[3] > z && p0[3] < z && p2[3] < z
+        return getlinesegment(p1, p2, p0, z)
+    elseif p2[3] < z && p1[3] >= z && p0[3] >= z
+        return getlinesegment(p2, p1, p0, z)
+    elseif p2[3] > z && p1[3] < z && p0[3] < z
+        return getlinesegment(p2, p0, p1, z)
+    else
+        return Nothing
+    end
+
+end
+
 function getlinesegment(p0, p1, p2, z)
-    seg_start = Float64[]
-    seg_end = Float64[]
-    seg_start[1] = p0[1] + (p1[1] - p0[1]) * (z - p0[3]) / (p1[3] - p0[3]);
-    seg_start[2] = p0[2] + (p1[2] - p0[2]) * (z - p0[3]) / (p1[3] - p0[3]);
-    seg_end[1] = p0[1] + (p2[1] - p0[1]) * (z - p0[3]) / (p2[3] - p0[3]);
-    seg_end[2] = p0[2] + (p2[2] - p0[2]) * (z - p0[3]) / (p2[3] - p0[3]);
-    return seg_start, seg_end;
+    start = zeros(2)
+    finish = zeros(2)
+    start[1] = p0[1] + (p1[1] - p0[1]) * (z - p0[3]) / (p1[3] - p0[3]);
+    start[2] = p0[2] + (p1[2] - p0[2]) * (z - p0[3]) / (p1[3] - p0[3]);
+    finish[1] = p0[1] + (p2[1] - p0[1]) * (z - p0[3]) / (p2[3] - p0[3]);
+    finish[2] = p0[2] + (p2[2] - p0[2]) * (z - p0[3]) / (p2[3] - p0[3]);
+    return LineSegment(start, finish, z);
 end
 
 end # module
