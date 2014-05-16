@@ -26,8 +26,8 @@ Test.with_handler(test_handler) do
 end
 
 
-# getvolume/getface test
-println("Testing Volume...")
+# getmesh/getface test
+println("Testing PolygonMesh...")
 
 # get the first face from cube.stl
 f = open("./data/cube.stl","r")
@@ -40,22 +40,24 @@ testFace = MeshSlicer.Face(Array[[0.0,0.0,10.0],
 
 testBounds = MeshSlicer.Bounds(10.0,10.0,10.0,0,0,0)
 
-resultVolume = MeshSlicer.Volume(f)
+resultmesh = MeshSlicer.PolygonMesh(f)
 
 Test.with_handler(test_handler) do
-    @test resultVolume.faces[1].vertices == testFace.vertices
-    @test resultVolume.faces[1].normal == testFace.normal
-    @test resultVolume.faces[1].heights == testFace.heights
+    @test resultmesh.faces[1].vertices == testFace.vertices
+    @test resultmesh.faces[1].normal == testFace.normal
+    @test resultmesh.faces[1].order == testFace.order
+    @test resultmesh.faces[1] == testFace
 end
 
 println("Testing Bounds...")
 Test.with_handler(test_handler) do
-    @test resultVolume.bounds.xmax == testBounds.xmax
-    @test resultVolume.bounds.ymax == testBounds.ymax
-    @test resultVolume.bounds.zmax == testBounds.zmax
-    @test resultVolume.bounds.xmin == testBounds.xmin
-    @test resultVolume.bounds.ymin == testBounds.ymin
-    @test resultVolume.bounds.zmin == testBounds.zmin
+    @test resultmesh.bounds.xmax == testBounds.xmax
+    @test resultmesh.bounds.ymax == testBounds.ymax
+    @test resultmesh.bounds.zmax == testBounds.zmax
+    @test resultmesh.bounds.xmin == testBounds.xmin
+    @test resultmesh.bounds.ymin == testBounds.ymin
+    @test resultmesh.bounds.zmin == testBounds.zmin
+    @test resultmesh.bounds == testBounds
 end
 
 close(f)
@@ -64,14 +66,15 @@ close(f)
 # translate([1,2,3])cube([4,5,6]);
 f = open("./data/translated_cube.stl","r")
 testBounds2 = MeshSlicer.Bounds(5.0,7.0,9.0,1.0,2.0,3.0)
-resultVolume2 = MeshSlicer.Volume(f)
+resultmesh2 = MeshSlicer.PolygonMesh(f)
 Test.with_handler(test_handler) do
-    @test resultVolume2.bounds.xmax == testBounds2.xmax
-    @test resultVolume2.bounds.ymax == testBounds2.ymax
-    @test resultVolume2.bounds.zmax == testBounds2.zmax
-    @test resultVolume2.bounds.xmin == testBounds2.xmin
-    @test resultVolume2.bounds.ymin == testBounds2.ymin
-    @test resultVolume2.bounds.zmin == testBounds2.zmin
+    @test resultmesh2.bounds.xmax == testBounds2.xmax
+    @test resultmesh2.bounds.ymax == testBounds2.ymax
+    @test resultmesh2.bounds.zmax == testBounds2.zmax
+    @test resultmesh2.bounds.xmin == testBounds2.xmin
+    @test resultmesh2.bounds.ymin == testBounds2.ymin
+    @test resultmesh2.bounds.zmin == testBounds2.zmin
+    @test resultmesh2.bounds == testBounds2
 end
 close(f)
 

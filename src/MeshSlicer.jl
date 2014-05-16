@@ -1,49 +1,24 @@
 module MeshSlicer
 
-# Setup types
-type Face
-    vertices
-    normal
-    heights # indices of min, middle, max z height
-end
-
-type Bounds
-    xmax
-    ymax
-    zmax
-    xmin
-    ymin
-    zmin
-end
-
-type Volume
-    bounds
-    faces
-end
-
 type UnstitchedPolygon
     segments
     layer
 end
 
-
-# End Type Setup
-
-
 function slice(path::String, thickness)
     file = open(path, "r")
 
-    volume = Volume(file)
+    mesh = PolygonMesh(file)
 
-    startZ = volume.bounds.zmin
+    startZ = mesh.bounds.zmin
 
     #We can only print an integer number of layers
-    layercount = round((volume.bounds.zmax - volume.bounds.zmin)/thickness)
+    layercount = round((mesh.bounds.zmax - mesh.bounds.zmin)/thickness)
 
     #Adjust sliceheight
-    sliceheight = (volume.bounds.zmax - volume.bounds.zmin)/layercount
+    sliceheight = (mesh.bounds.zmax - mesh.bounds.zmin)/layercount
 
-    layers = [volume.bounds.zmin:sliceheight:volume.bounds.zmax]
+    layers = [mesh.bounds.zmin:sliceheight:mesh.bounds.zmax]
 
     segmentlist = Array(UnstitchedPolygon,convert(Int64,layercount))
 
@@ -52,10 +27,10 @@ function slice(path::String, thickness)
     end
 
     #println(segmentlist)
-    for face in volume.faces
+    for face in mesh.faces
 
-        initialSlice = convert(Int64, floor((face.vertices[face.heights[1]][3] - volume.bounds.zmin)/sliceheight))
-        finalSlice = convert(Int64, floor((face.vertices[face.heights[3]][3] - volume.bounds.zmin)/sliceheight))
+        initialSlice = convert(Int64, floor((face.vertices[face.order[1]][3] - mesh.bounds.zmin)/sliceheight))
+        finalSlice = convert(Int64, floor((face.vertices[face.order[3]][3] - mesh.bounds.zmin)/sliceheight))
 
         locallayer = layers[initialSlice+1:finalSlice]
 
@@ -68,11 +43,94 @@ function slice(path::String, thickness)
             index = index + 1
         end
     end
-    return (segmentlist)
+    return segmentlist
 end
 
-function Volume(m::IOStream)
-    # create a volume representation 
+function findorder(vertices, index)
+    # findorder
+    # Given an array of vectors, return an ordered list of their maximum values.
+    order = [1,1,1]
+    for i = 1:3
+        if vertices[i][index] < vertices[order[1]][index] #min
+            order[2] = order[1]
+            order[1] = i
+        elseif vertices[i][index] > vertices[order[3]][index] #max
+            order[2] = order[3]
+            order[3] = i
+        elseif vertices[i][index] == vertices[order[1]][index] #same as min
+            order[2] = order[1]
+        elseif vertices[i][index] == vertices[order[3]][index] #same as max
+            order[2] = order[3]
+        else
+            order[2] = i
+        end
+    end
+    return order
+end
+
+
+################################################################################
+#
+# Bounds:
+#   xmax
+#   ymax
+#   zmax
+#   xmin
+#   ymin
+#   zmin
+#
+################################################################################
+
+type Bounds
+    xmax
+    ymax
+    zmax
+    xmin
+    ymin
+    zmin
+end
+
+function updatebounds!(box::Bounds, face)
+    xordering = findorder(face.vertices, 1)
+    yordering = findorder(face.vertices, 2)
+    zordering = face.order
+
+    box.xmin = min(face.vertices[xordering[1]][1], box.xmin)
+    box.ymin = min(face.vertices[yordering[1]][2], box.ymin)
+    box.zmin = min(face.vertices[zordering[1]][3], box.zmin)
+    box.xmax = max(face.vertices[xordering[3]][1], box.xmax)
+    box.ymax = max(face.vertices[yordering[3]][2], box.ymax)
+    box.zmax = max(face.vertices[zordering[3]][3], box.zmax)
+end
+
+function (==)(a::Bounds, b::Bounds)
+    return (a.xmax == b.xmax &&
+            a.ymax == b.ymax &&
+            a.zmax == b.zmax &&
+            a.xmin == b.xmin &&
+            a.ymin == b.ymin &&
+            a.zmin == b.zmin)
+end
+
+################################################################################
+#
+# PolygonMesh:
+#   bounds
+#   faces
+#
+# outer constructors:
+#   PolygonMesh(m::IOStream)
+#       Create a mesh from an STL file IOStream
+#
+################################################################################
+
+type PolygonMesh
+    bounds
+    faces
+end
+
+function PolygonMesh(m::IOStream)
+    # create a mesh representation 
     
     faces = Face[]
     bounds = Bounds(0,0,0,Inf,Inf,Inf)
@@ -85,20 +143,30 @@ function Volume(m::IOStream)
         end
     end
     
-    return Volume(bounds, faces)
+    return PolygonMesh(bounds, faces)
 end
 
-function updatebounds!(box::Bounds, face)
-    xordering = findorder(face.vertices, 1)
-    yordering = findorder(face.vertices, 2)
-    zordering = face.heights
 
-    box.xmin = min(face.vertices[xordering[1]][1], box.xmin)
-    box.ymin = min(face.vertices[yordering[1]][2], box.ymin)
-    box.zmin = min(face.vertices[zordering[1]][3], box.zmin)
-    box.xmax = max(face.vertices[xordering[3]][1], box.xmax)
-    box.ymax = max(face.vertices[yordering[3]][2], box.ymax)
-    box.zmax = max(face.vertices[zordering[3]][3], box.zmax)
+################################################################################
+#
+# Face:
+#   vertices : [[x, y, z], ...]
+#       An array of the vertices in the face
+#   normal : [x::Float64, y::Float64, x::Float64]
+#   order : [min, middle, max]
+#       The order of the faces based on their ordinance against the slicng plane
+#
+#
+# outer constructors:
+#   Face(f::IOStream)
+#       Pulls a face from an STL file IOStream
+#
+################################################################################
+
+type Face
+    vertices
+    normal
+    order # indices of min, middle, max z height
 end
 
 function Face(m::IOStream)
@@ -120,34 +188,18 @@ function Face(m::IOStream)
             push!(vertices, float64(line[2:4]))
         end
         # Find Height ordering
-        heights = findorder(vertices, 3)
+        order = findorder(vertices, 3)
 
-        return Face(vertices, normal, heights)
+        return Face(vertices, normal, order)
     else
         return Nothing
     end
 end
 
-function findorder(vertices, index)
-    # findheights
-    # Given an array of vectors, return an ordered list of their maximum values.
-    heights = [1,1,1]
-    for i = 1:3
-        if vertices[i][index] < vertices[heights[1]][index] #min
-            heights[2] = heights[1]
-            heights[1] = i
-        elseif vertices[i][index] > vertices[heights[3]][index] #max
-            heights[2] = heights[3]
-            heights[3] = i
-        elseif vertices[i][index] == vertices[heights[1]][index] #same as min
-            heights[2] = heights[1]
-        elseif vertices[i][index] == vertices[heights[3]][index] #same as max
-            heights[2] = heights[3]
-        else
-            heights[2] = i
-        end
-    end
-    return heights
+function (==)(a::Face, b::Face)
+    return (a.vertices == b.vertices &&
+            a.normal == b.normal &&
+            a.order == b.order)
 end
 
 ################################################################################
@@ -157,13 +209,12 @@ end
 #   finish : [x::Float64, y::Float64]
 #   layer : z::Number
 #
-# constructors:
+# outer constructors:
 #   LineSegment(f::Face, z::Number)
 #   LineSegment(p0, p1, p2, z::Number)
 #       p0, p1, p2 are expected to be Arrays of size 3 containing numbers
 #
 ################################################################################
-
 
 type LineSegment
     start
@@ -203,6 +254,11 @@ function LineSegment(p0::Array, p1::Array, p2::Array, z)
     finish[1] = p0[1] + (p2[1] - p0[1]) * (z - p0[3]) / (p2[3] - p0[3]);
     finish[2] = p0[2] + (p2[2] - p0[2]) * (z - p0[3]) / (p2[3] - p0[3]);
     return LineSegment(start, finish, z);
+end
+
+
+function (==)(a::LineSegment, b::LineSegment)
+    return a.start == b.start && a.finish == b.finish
 end
 
 end # module
