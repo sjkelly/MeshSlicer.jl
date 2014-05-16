@@ -10,6 +10,8 @@ function slice(path::String, thickness)
 
     mesh = PolygonMesh(file)
 
+    close(file)
+
     startZ = mesh.bounds.zmin
 
     #We can only print an integer number of layers
