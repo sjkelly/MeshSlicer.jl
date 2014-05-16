@@ -36,7 +36,7 @@ end
 # End Type Setup
 
 
-function sliceSTL(path, thickness)
+function slice(path::String, thickness)
     file = open(path, "r")
 
     volume = getvolume(file)
@@ -67,7 +67,7 @@ function sliceSTL(path, thickness)
 
         index = initialSlice + 1
         for layer in locallayer
-            seg = sliceface(face, layer)
+            seg = slice(face, layer)
             if seg != Nothing
                 push!(segmentlist[index].segments, seg)
             end
@@ -156,7 +156,7 @@ function findorder(vertices, index)
     return heights
 end
 
-function sliceface(f, z)
+function slice(f::Face, z)
 
     p0 = f.vertices[1]
     p1 = f.vertices[2]
