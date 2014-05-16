@@ -155,6 +155,9 @@ end
 #   normal : [x::Float64, y::Float64, x::Float64]
 #   order : [min, middle, max]
 #       The order of the faces based on their ordinance against the slicng plane
+#   angle : Float64
+#       Angle in radians with the slicing plane. Ex: Normal of [0,0,1] = 0,
+#       Normal of [1,0,0] = pi/2, Normal of [0,0,-1] = pi
 #
 #
 # outer constructors:
@@ -167,6 +170,7 @@ type Face
     vertices
     normal
     order # indices of min, middle, max z height
+    angle # angle (in radians) the face makes with the slice plane
 end
 
 function Face(m::IOStream)
@@ -182,6 +186,8 @@ function Face(m::IOStream)
     line = split(lowercase(readline(m)))
     if line[1] == "facet"
         normal = float64(line[3:5])
+        normal = normal/norm(normal) # make sure normal is actually normal
+        angle = acos(dot(normal, [0,0,1])) # find angle against plane
         readline(m) # Throw away outerloop
         for i = 1:3 # Get vertices
             line = split(lowercase(readline(m)))
@@ -190,7 +196,7 @@ function Face(m::IOStream)
         # Find Height ordering
         order = findorder(vertices, 3)
 
-        return Face(vertices, normal, order)
+        return Face(vertices, normal, order, angle)
     else
         return Nothing
     end
@@ -199,7 +205,8 @@ end
 function (==)(a::Face, b::Face)
     return (a.vertices == b.vertices &&
             a.normal == b.normal &&
-            a.order == b.order)
+            a.order == b.order &&
+            a.angle == b.angle)
 end
 
 ################################################################################
@@ -260,5 +267,6 @@ end
 function (==)(a::LineSegment, b::LineSegment)
     return a.start == b.start && a.finish == b.finish
 end
+
 
 end # module
