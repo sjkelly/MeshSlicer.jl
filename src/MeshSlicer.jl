@@ -2,41 +2,41 @@ module MeshSlicer
 
 # Setup types
 type Face
-    vertices::Array
-    normal::Array{Float64}
-    heights::Array{Int64} # indices of min, middle, max z height
+    vertices
+    normal
+    heights # indices of min, middle, max z height
 end
 
 type Bounds
-    maxX::Float64
-    maxY::Float64
-    maxZ::Float64
-    minX::Float64
-    minY::Float64
-    minZ::Float64
+    maxX
+    maxY
+    maxZ
+    minX
+    minY
+    minZ
 end
 
 type Volume
-    bounds::Bounds
-    faces::Array{Face}
+    bounds
+    faces
 end
 
 type LineSegment
-    start::Array{Float64}
-    finish::Array{Float64}
-    layer::Float64
+    start
+    finish
+    layer
 end
 
 type UnstitchedPolygon
-    segments::Array{LineSegment}
-    layer::Float64
+    segments
+    layer
 end
 
 
 # End Type Setup
 
 
-function sliceSTL(path::String, thickness::Float64)
+function sliceSTL(path, thickness)
     file = open(path, "r")
 
     volume = getvolume(file)
@@ -77,7 +77,7 @@ function sliceSTL(path::String, thickness::Float64)
     return (segmentlist)
 end
 
-function getvolume(m::IOStream)
+function getvolume(m)
     # create a volume representation 
     
     faces = Face[]
@@ -107,7 +107,7 @@ function updatebounds!(box::Bounds, face)
     box.maxZ = max(face.vertices[zordering[3]][3], box.maxZ)
 end
 
-function getface(m::IOStream)
+function getface(m)
     #  facet normal -1 0 0
     #    outer loop
     #      vertex 0 0 10
@@ -134,7 +134,7 @@ function getface(m::IOStream)
     end
 end
 
-function findorder(vertices::Array, index)
+function findorder(vertices, index)
     # findheights
     # Given an array of vectors, return an ordered list of their maximum values.
     heights = [1,1,1]
@@ -156,7 +156,7 @@ function findorder(vertices::Array, index)
     return heights
 end
 
-function sliceface(f::Face, z::Float64)
+function sliceface(f, z)
 
     p0 = f.vertices[1]
     p1 = f.vertices[2]
