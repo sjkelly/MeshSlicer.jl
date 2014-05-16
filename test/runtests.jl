@@ -27,7 +27,7 @@ end
 
 
 # getvolume/getface test
-println("Testing getvolume...")
+println("Testing Volume...")
 
 # get the first face from cube.stl
 f = open("./data/cube.stl","r")
@@ -40,7 +40,7 @@ testFace = MeshSlicer.Face(Array[[0.0,0.0,10.0],
 
 testBounds = MeshSlicer.Bounds(10.0,10.0,10.0,0,0,0)
 
-resultVolume = MeshSlicer.getvolume(f)
+resultVolume = MeshSlicer.Volume(f)
 
 Test.with_handler(test_handler) do
     @test resultVolume.faces[1].vertices == testFace.vertices
@@ -60,11 +60,11 @@ end
 
 close(f)
 
-#Test bounds on translated cube
-#translate([1,2,3])cube([4,5,6]);
+# Test bounds on translated cube
+# translate([1,2,3])cube([4,5,6]);
 f = open("./data/translated_cube.stl","r")
 testBounds2 = MeshSlicer.Bounds(5.0,7.0,9.0,1.0,2.0,3.0)
-resultVolume2 = MeshSlicer.getvolume(f)
+resultVolume2 = MeshSlicer.Volume(f)
 Test.with_handler(test_handler) do
     @test resultVolume2.bounds.maxX == testBounds2.maxX
     @test resultVolume2.bounds.maxY == testBounds2.maxY
@@ -74,3 +74,14 @@ Test.with_handler(test_handler) do
     @test resultVolume2.bounds.minZ == testBounds2.minZ
 end
 close(f)
+
+
+# Test getlinesegment
+testpoints = Array[[0,0,0],[0,1,0],[0,1,1]]
+println(MeshSlicer.LineSegment(testpoints[1],testpoints[2],testpoints[3], 0.5))
+println(MeshSlicer.LineSegment(testpoints[1],testpoints[3],testpoints[2], 0.5))
+println(MeshSlicer.LineSegment(testpoints[3],testpoints[1],testpoints[2], 0.5))
+println(MeshSlicer.LineSegment(testpoints[3],testpoints[2],testpoints[1], 0.5))
+println(MeshSlicer.LineSegment(testpoints[2],testpoints[3],testpoints[1], 0.5))
+println(MeshSlicer.LineSegment(testpoints[2],testpoints[1],testpoints[3], 0.5))
+

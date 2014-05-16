@@ -21,12 +21,6 @@ type Volume
     faces
 end
 
-type LineSegment
-    start
-    finish
-    layer
-end
-
 type UnstitchedPolygon
     segments
     layer
@@ -39,7 +33,7 @@ end
 function slice(path::String, thickness)
     file = open(path, "r")
 
-    volume = getvolume(file)
+    volume = Volume(file)
 
     startZ = volume.bounds.minZ
 
@@ -67,7 +61,7 @@ function slice(path::String, thickness)
 
         index = initialSlice + 1
         for layer in locallayer
-            seg = slice(face, layer)
+            seg = LineSegment(face, layer)
             if seg != Nothing
                 push!(segmentlist[index].segments, seg)
             end
@@ -77,14 +71,14 @@ function slice(path::String, thickness)
     return (segmentlist)
 end
 
-function getvolume(m)
+function Volume(m::IOStream)
     # create a volume representation 
     
     faces = Face[]
     bounds = Bounds(0,0,0,Inf,Inf,Inf)
     
     while !eof(m)
-        f = getface(m)
+        f = Face(m)
         if f != Nothing
             push!(faces, f)
             updatebounds!(bounds, f)
@@ -107,7 +101,7 @@ function updatebounds!(box::Bounds, face)
     box.maxZ = max(face.vertices[zordering[3]][3], box.maxZ)
 end
 
-function getface(m)
+function Face(m::IOStream)
     #  facet normal -1 0 0
     #    outer loop
     #      vertex 0 0 10
@@ -156,31 +150,52 @@ function findorder(vertices, index)
     return heights
 end
 
-function slice(f::Face, z)
+################################################################################
+#
+# LineSegment:
+#   start : [x::Float64, y::Float64]
+#   finish : [x::Float64, y::Float64]
+#   layer : z::Number
+#
+# constructors:
+#   LineSegment(f::Face, z::Number)
+#   LineSegment(p0, p1, p2, z::Number)
+#       p0, p1, p2 are expected to be Arrays of size 3 containing numbers
+#
+################################################################################
+
+
+type LineSegment
+    start
+    finish
+    layer
+end
+
+function LineSegment(f::Face, z)
 
     p0 = f.vertices[1]
     p1 = f.vertices[2]
     p2 = f.vertices[3]
 
     if p0[3] < z && p1[3] >= z && p2[3] >= z
-        return getlinesegment(p0, p2, p1, z)
+        return LineSegment(p0, p2, p1, z)
     elseif p0[3] > z && p1[3] < z && p2[3] < z
-        return getlinesegment(p0, p1, p2, z)
+        return LineSegment(p0, p1, p2, z)
     elseif p1[3] < z && p0[3] >= z && p2[3] >= z
-        return getlinesegment(p1, p0, p2, z)
+        return LineSegment(p1, p0, p2, z)
     elseif p1[3] > z && p0[3] < z && p2[3] < z
-        return getlinesegment(p1, p2, p0, z)
+        return LineSegment(p1, p2, p0, z)
     elseif p2[3] < z && p1[3] >= z && p0[3] >= z
-        return getlinesegment(p2, p1, p0, z)
+        return LineSegment(p2, p1, p0, z)
     elseif p2[3] > z && p1[3] < z && p0[3] < z
-        return getlinesegment(p2, p0, p1, z)
+        return LineSegment(p2, p0, p1, z)
     else
         return Nothing
     end
 
 end
 
-function getlinesegment(p0, p1, p2, z)
+function LineSegment(p0::Array, p1::Array, p2::Array, z)
     start = zeros(2)
     finish = zeros(2)
     start[1] = p0[1] + (p1[1] - p0[1]) * (z - p0[3]) / (p1[3] - p0[3]);
