@@ -8,12 +8,12 @@ type Face
 end
 
 type Bounds
-    maxX
-    maxY
-    maxZ
-    minX
-    minY
-    minZ
+    xmax
+    ymax
+    zmax
+    xmin
+    ymin
+    zmin
 end
 
 type Volume
@@ -35,15 +35,15 @@ function slice(path::String, thickness)
 
     volume = Volume(file)
 
-    startZ = volume.bounds.minZ
+    startZ = volume.bounds.zmin
 
     #We can only print an integer number of layers
-    layercount = round((volume.bounds.maxZ - volume.bounds.minZ)/thickness)
+    layercount = round((volume.bounds.zmax - volume.bounds.zmin)/thickness)
 
     #Adjust sliceheight
-    sliceheight = (volume.bounds.maxZ - volume.bounds.minZ)/layercount
+    sliceheight = (volume.bounds.zmax - volume.bounds.zmin)/layercount
 
-    layers = [volume.bounds.minZ:sliceheight:volume.bounds.maxZ]
+    layers = [volume.bounds.zmin:sliceheight:volume.bounds.zmax]
 
     segmentlist = Array(UnstitchedPolygon,convert(Int64,layercount))
 
@@ -54,8 +54,8 @@ function slice(path::String, thickness)
     #println(segmentlist)
     for face in volume.faces
 
-        initialSlice = convert(Int64, floor((face.vertices[face.heights[1]][3] - volume.bounds.minZ)/sliceheight))
-        finalSlice = convert(Int64, floor((face.vertices[face.heights[3]][3] - volume.bounds.minZ)/sliceheight))
+        initialSlice = convert(Int64, floor((face.vertices[face.heights[1]][3] - volume.bounds.zmin)/sliceheight))
+        finalSlice = convert(Int64, floor((face.vertices[face.heights[3]][3] - volume.bounds.zmin)/sliceheight))
 
         locallayer = layers[initialSlice+1:finalSlice]
 
@@ -93,12 +93,12 @@ function updatebounds!(box::Bounds, face)
     yordering = findorder(face.vertices, 2)
     zordering = face.heights
 
-    box.minX = min(face.vertices[xordering[1]][1], box.minX)
-    box.minY = min(face.vertices[yordering[1]][2], box.minY)
-    box.minZ = min(face.vertices[zordering[1]][3], box.minZ)
-    box.maxX = max(face.vertices[xordering[3]][1], box.maxX)
-    box.maxY = max(face.vertices[yordering[3]][2], box.maxY)
-    box.maxZ = max(face.vertices[zordering[3]][3], box.maxZ)
+    box.xmin = min(face.vertices[xordering[1]][1], box.xmin)
+    box.ymin = min(face.vertices[yordering[1]][2], box.ymin)
+    box.zmin = min(face.vertices[zordering[1]][3], box.zmin)
+    box.xmax = max(face.vertices[xordering[3]][1], box.xmax)
+    box.ymax = max(face.vertices[yordering[3]][2], box.ymax)
+    box.zmax = max(face.vertices[zordering[3]][3], box.zmax)
 end
 
 function Face(m::IOStream)

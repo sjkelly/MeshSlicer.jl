@@ -50,12 +50,12 @@ end
 
 println("Testing Bounds...")
 Test.with_handler(test_handler) do
-    @test resultVolume.bounds.maxX == testBounds.maxX
-    @test resultVolume.bounds.maxY == testBounds.maxY
-    @test resultVolume.bounds.maxZ == testBounds.maxZ
-    @test resultVolume.bounds.minX == testBounds.minX
-    @test resultVolume.bounds.minY == testBounds.minY
-    @test resultVolume.bounds.minZ == testBounds.minZ
+    @test resultVolume.bounds.xmax == testBounds.xmax
+    @test resultVolume.bounds.ymax == testBounds.ymax
+    @test resultVolume.bounds.zmax == testBounds.zmax
+    @test resultVolume.bounds.xmin == testBounds.xmin
+    @test resultVolume.bounds.ymin == testBounds.ymin
+    @test resultVolume.bounds.zmin == testBounds.zmin
 end
 
 close(f)
@@ -66,12 +66,12 @@ f = open("./data/translated_cube.stl","r")
 testBounds2 = MeshSlicer.Bounds(5.0,7.0,9.0,1.0,2.0,3.0)
 resultVolume2 = MeshSlicer.Volume(f)
 Test.with_handler(test_handler) do
-    @test resultVolume2.bounds.maxX == testBounds2.maxX
-    @test resultVolume2.bounds.maxY == testBounds2.maxY
-    @test resultVolume2.bounds.maxZ == testBounds2.maxZ
-    @test resultVolume2.bounds.minX == testBounds2.minX
-    @test resultVolume2.bounds.minY == testBounds2.minY
-    @test resultVolume2.bounds.minZ == testBounds2.minZ
+    @test resultVolume2.bounds.xmax == testBounds2.xmax
+    @test resultVolume2.bounds.ymax == testBounds2.ymax
+    @test resultVolume2.bounds.zmax == testBounds2.zmax
+    @test resultVolume2.bounds.xmin == testBounds2.xmin
+    @test resultVolume2.bounds.ymin == testBounds2.ymin
+    @test resultVolume2.bounds.zmin == testBounds2.zmin
 end
 close(f)
 
