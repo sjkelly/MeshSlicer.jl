@@ -215,6 +215,8 @@ end
 #   start : [x::Float64, y::Float64]
 #   finish : [x::Float64, y::Float64]
 #   layer : z::Number
+#   slope :
+#       slope in slice plane, computed automatically by inner constructor
 #
 # outer constructors:
 #   LineSegment(f::Face, z::Number)
@@ -227,6 +229,9 @@ type LineSegment
     start
     finish
     layer
+    slope
+
+    LineSegment(x,y,z) = new(x,y,z,(x[1]-y[1])/(x[2]-y[2])) # compute slope
 end
 
 function LineSegment(f::Face, z)
@@ -265,7 +270,9 @@ end
 
 
 function (==)(a::LineSegment, b::LineSegment)
-    return a.start == b.start && a.finish == b.finish
+    return (a.start == b.start &&
+            a.finish == b.finish &&
+            a.slope == b.slope)
 end
 
 
