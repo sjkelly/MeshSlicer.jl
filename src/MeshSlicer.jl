@@ -1,6 +1,6 @@
 module MeshSlicer
 
-type UnstitchedPolygon
+type PolygonSlice
     segments
     layer
 end
@@ -20,10 +20,10 @@ function slice(path::String, thickness)
 
     layers = [mesh.bounds.zmin:sliceheight:mesh.bounds.zmax]
 
-    segmentlist = Array(UnstitchedPolygon,convert(Int64,layercount))
+    segmentlist = Array(PolygonSlice,convert(Int64,layercount))
 
     for i = 1:layercount
-        segmentlist[i] = UnstitchedPolygon(LineSegment[],layers[i])
+        segmentlist[i] = PolygonSlice(LineSegment[],layers[i])
     end
 
     #println(segmentlist)
@@ -214,7 +214,6 @@ end
 # LineSegment:
 #   start : [x::Float64, y::Float64]
 #   finish : [x::Float64, y::Float64]
-#   layer : z::Number
 #   slope :
 #       slope in slice plane, computed automatically by inner constructor
 #
@@ -228,10 +227,9 @@ end
 type LineSegment
     start
     finish
-    layer
     slope
 
-    LineSegment(x,y,z) = new(x,y,z,(x[1]-y[1])/(x[2]-y[2])) # compute slope
+    LineSegment(x,y) = new(x,y,(x[1]-y[1])/(x[2]-y[2])) # compute slope
 end
 
 function LineSegment(f::Face, z)
@@ -265,7 +263,7 @@ function LineSegment(p0::Array, p1::Array, p2::Array, z)
     start[2] = p0[2] + (p1[2] - p0[2]) * (z - p0[3]) / (p1[3] - p0[3]);
     finish[1] = p0[1] + (p2[1] - p0[1]) * (z - p0[3]) / (p2[3] - p0[3]);
     finish[2] = p0[2] + (p2[2] - p0[2]) * (z - p0[3]) / (p2[3] - p0[3]);
-    return LineSegment(start, finish, z);
+    return LineSegment(start, finish);
 end
 
 
