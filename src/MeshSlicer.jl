@@ -70,50 +70,6 @@ function findorder(vertices, index)
     return order
 end
 
-
-################################################################################
-#
-# Bounds:
-#   xmax
-#   ymax
-#   zmax
-#   xmin
-#   ymin
-#   zmin
-#
-################################################################################
-
-type Bounds
-    xmax
-    ymax
-    zmax
-    xmin
-    ymin
-    zmin
-end
-
-function updatebounds!(box::Bounds, face)
-    xordering = findorder(face.vertices, 1)
-    yordering = findorder(face.vertices, 2)
-    zordering = face.order
-
-    box.xmin = min(face.vertices[xordering[1]][1], box.xmin)
-    box.ymin = min(face.vertices[yordering[1]][2], box.ymin)
-    box.zmin = min(face.vertices[zordering[1]][3], box.zmin)
-    box.xmax = max(face.vertices[xordering[3]][1], box.xmax)
-    box.ymax = max(face.vertices[yordering[3]][2], box.ymax)
-    box.zmax = max(face.vertices[zordering[3]][3], box.zmax)
-end
-
-function (==)(a::Bounds, b::Bounds)
-    return (a.xmax == b.xmax &&
-            a.ymax == b.ymax &&
-            a.zmax == b.zmax &&
-            a.xmin == b.xmin &&
-            a.ymin == b.ymin &&
-            a.zmin == b.zmin)
-end
-
 ################################################################################
 #
 # PolygonMesh:
@@ -141,7 +97,7 @@ function PolygonMesh(m::IOStream)
         f = Face(m)
         if f != Nothing
             push!(faces, f)
-            updatebounds!(bounds, f)
+            update!(bounds, f)
         end
     end
     
@@ -275,5 +231,47 @@ function (==)(a::LineSegment, b::LineSegment)
             a.slope == b.slope)
 end
 
+################################################################################
+#
+# Bounds:
+#   xmax
+#   ymax
+#   zmax
+#   xmin
+#   ymin
+#   zmin
+#
+################################################################################
+
+type Bounds
+    xmax
+    ymax
+    zmax
+    xmin
+    ymin
+    zmin
+end
+
+function update!(box::Bounds, face::Face)
+    xordering = findorder(face.vertices, 1)
+    yordering = findorder(face.vertices, 2)
+    zordering = face.order
+
+    box.xmin = min(face.vertices[xordering[1]][1], box.xmin)
+    box.ymin = min(face.vertices[yordering[1]][2], box.ymin)
+    box.zmin = min(face.vertices[zordering[1]][3], box.zmin)
+    box.xmax = max(face.vertices[xordering[3]][1], box.xmax)
+    box.ymax = max(face.vertices[yordering[3]][2], box.ymax)
+    box.zmax = max(face.vertices[zordering[3]][3], box.zmax)
+end
+
+function (==)(a::Bounds, b::Bounds)
+    return (a.xmax == b.xmax &&
+            a.ymax == b.ymax &&
+            a.zmax == b.zmax &&
+            a.xmin == b.xmin &&
+            a.ymin == b.ymin &&
+            a.zmin == b.zmin)
+end
 
 end # module
