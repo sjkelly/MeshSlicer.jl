@@ -89,8 +89,6 @@ end
 #   vertices : [[x, y, z], ...]
 #       An array of the vertices in the face
 #   normal : [x::Float64, y::Float64, x::Float64]
-#   order : [min, middle, max]
-#       The order of the faces based on their ordinance against the slicng plane
 #   angle : Float64
 #       Angle in radians with the slicing plane. Ex: Normal of [0,0,1] = 0,
 #       Normal of [1,0,0] = pi/2, Normal of [0,0,-1] = pi
