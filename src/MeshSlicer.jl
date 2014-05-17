@@ -31,8 +31,8 @@ function slice(path::String, thickness)
     #println(segmentlist)
     for face in mesh.faces
 
-        initialSlice = convert(Int64, floor((face.vertices[face.order[1]][3] - mesh.bounds.zmin)/sliceheight))
-        finalSlice = convert(Int64, floor((face.vertices[face.order[3]][3] - mesh.bounds.zmin)/sliceheight))
+        initialSlice = convert(Int64, floor((face.vertices[1][3] - mesh.bounds.zmin)/sliceheight))
+        finalSlice = convert(Int64, floor((face.vertices[3][3] - mesh.bounds.zmin)/sliceheight))
 
         locallayer = layers[initialSlice+1:finalSlice]
 
@@ -46,28 +46,6 @@ function slice(path::String, thickness)
         end
     end
     return segmentlist
-end
-
-function findorder(vertices, index)
-    # findorder
-    # Given an array of vectors, return an ordered list of their maximum values.
-    order = [1,1,1]
-    for i = 1:3
-        if vertices[i][index] < vertices[order[1]][index] #min
-            order[2] = order[1]
-            order[1] = i
-        elseif vertices[i][index] > vertices[order[3]][index] #max
-            order[2] = order[3]
-            order[3] = i
-        elseif vertices[i][index] == vertices[order[1]][index] #same as min
-            order[2] = order[1]
-        elseif vertices[i][index] == vertices[order[3]][index] #same as max
-            order[2] = order[3]
-        else
-            order[2] = i
-        end
-    end
-    return order
 end
 
 ################################################################################
@@ -127,7 +105,6 @@ end
 type Face
     vertices
     normal
-    order # indices of min, middle, max z height
     angle # angle (in radians) the face makes with the slice plane
 end
 
@@ -139,7 +116,7 @@ function Face(m::IOStream)
     #      vertex 0 0 0
     #    endloop
     #  endfacet
-    vertices = Array[]
+    vertices = [zeros(3) for i = 1:3]
     normal = zeros(3)
     line = split(lowercase(readline(m)))
     if line[1] == "facet"
@@ -149,12 +126,10 @@ function Face(m::IOStream)
         readline(m) # Throw away outerloop
         for i = 1:3 # Get vertices
             line = split(lowercase(readline(m)))
-            push!(vertices, float64(line[2:4]))
+            vertices[i] = float64(line[2:4])
         end
-        # Find Height ordering
-        order = findorder(vertices, 3)
-
-        return Face(vertices, normal, order, angle)
+        sort!(vertices, by=x->x[3]) # Sort by 3rd index.
+        return Face(vertices, normal, angle)
     else
         return Nothing
     end
@@ -163,7 +138,6 @@ end
 function (==)(a::Face, b::Face)
     return (a.vertices == b.vertices &&
             a.normal == b.normal &&
-            a.order == b.order &&
             a.angle == b.angle)
 end
 
@@ -253,16 +227,15 @@ type Bounds
 end
 
 function update!(box::Bounds, face::Face)
-    xordering = findorder(face.vertices, 1)
-    yordering = findorder(face.vertices, 2)
-    zordering = face.order
+    x = sort(face.vertices, by=x->x[1]) # Sort by x
+    y = sort(face.vertices, by=x->x[2]) # Sort by y
 
-    box.xmin = min(face.vertices[xordering[1]][1], box.xmin)
-    box.ymin = min(face.vertices[yordering[1]][2], box.ymin)
-    box.zmin = min(face.vertices[zordering[1]][3], box.zmin)
-    box.xmax = max(face.vertices[xordering[3]][1], box.xmax)
-    box.ymax = max(face.vertices[yordering[3]][2], box.ymax)
-    box.zmax = max(face.vertices[zordering[3]][3], box.zmax)
+    box.xmin = min(x[1][1], box.xmin)
+    box.ymin = min(y[1][2], box.ymin)
+    box.zmin = min(face.vertices[1][3], box.zmin)
+    box.xmax = max(x[3][1], box.xmax)
+    box.ymax = max(y[3][2], box.ymax)
+    box.zmax = max(face.vertices[3][3], box.zmax)
 end
 
 function (==)(a::Bounds, b::Bounds)

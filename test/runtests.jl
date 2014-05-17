@@ -8,35 +8,16 @@ test_handler(r::Test.Success) = println("Test success: $(r.expr)")
 test_handler(r::Test.Failure) = error("Test fail: $(r.expr)")
 test_handler(r::Test.Error) = rethrow(r)
 
-
-
-
-# findorder tests
-println("Testing findorder...")
-a = Array[[1.0,2.0,3.0],[2.0,3.0,1.0],[3.0,1.0,2.0]]
-b = Array[[1.0,2.0,3.0],[2.0,2.0,3.0],[2.0,1.0,3.0]]
-
-Test.with_handler(test_handler) do
-    @test MeshSlicer.findorder(a, 1) == [1,2,3]
-    @test MeshSlicer.findorder(a, 2) == [3,1,2]
-    @test MeshSlicer.findorder(a, 3) == [2,3,1]
-    @test MeshSlicer.findorder(b, 1) == [1,2,2]
-    @test MeshSlicer.findorder(b, 2) == [3,1,1]
-    @test MeshSlicer.findorder(b, 3) == [1,1,1]
-end
-
-
 # getmesh/getface test
 println("Testing PolygonMesh...")
 
 # get the first face from cube.stl
 f = open("./data/cube.stl","r")
 
-testFace = MeshSlicer.Face(Array[[0.0,0.0,10.0],
-                                 [0.0,10.0,10.0],
-                                 [0.0,0.0,0.0]],
-                           [-1.0,0.0,0.0],
-                           [3,1,1], pi/2)
+testFace = MeshSlicer.Face(Array[[0.0,0.0,0.0],
+                                 [0.0,0.0,10.0],
+                                 [0.0,10.0,10.0]],
+                           [-1.0,0.0,0.0], pi/2)
 
 testBounds = MeshSlicer.Bounds(10.0,10.0,10.0,0,0,0)
 
@@ -45,7 +26,6 @@ resultmesh = MeshSlicer.PolygonMesh(f)
 Test.with_handler(test_handler) do
     @test resultmesh.faces[1].vertices == testFace.vertices
     @test resultmesh.faces[1].normal == testFace.normal
-    @test resultmesh.faces[1].order == testFace.order
     @test resultmesh.faces[1] == testFace
 end
 
