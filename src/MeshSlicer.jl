@@ -5,6 +5,35 @@ type PolygonSlice
     layer
 end
 
+type Bounds
+    xmax::Float64
+    ymax::Float64
+    zmax::Float64
+    xmin::Float64
+    ymin::Float64
+    zmin::Float64
+end
+
+type Face
+    vertices::Array{Array}
+    normal::Array{Float64}
+end
+
+type PolygonMesh
+    bounds::Bounds
+    faces::Array{Face}
+end
+
+type LineSegment
+    start::Array{Float64}
+    finish::Array{Float64}
+    slope::Float64
+    normal::Array{Float64}
+
+    LineSegment(x,y) = new(x,y,(x[1]-y[1])/(x[2]-y[2])) # compute slope
+end
+
+
 function slice(path::String, thickness)
     file = open(path, "r")
 
@@ -60,11 +89,6 @@ end
 #
 ################################################################################
 
-type PolygonMesh
-    bounds
-    faces
-end
-
 function PolygonMesh(m::IOStream)
     # create a mesh representation 
     
@@ -89,9 +113,6 @@ end
 #   vertices : [[x, y, z], ...]
 #       An array of the vertices in the face
 #   normal : [x::Float64, y::Float64, x::Float64]
-#   angle : Float64
-#       Angle in radians with the slicing plane. Ex: Normal of [0,0,1] = 0,
-#       Normal of [1,0,0] = pi/2, Normal of [0,0,-1] = pi
 #
 #
 # outer constructors:
@@ -99,12 +120,6 @@ end
 #       Pulls a face from an STL file IOStream
 #
 ################################################################################
-
-type Face
-    vertices
-    normal
-    angle # angle (in radians) the face makes with the slice plane
-end
 
 function Face(m::IOStream)
     #  facet normal -1 0 0
@@ -120,14 +135,13 @@ function Face(m::IOStream)
     if line[1] == "facet"
         normal = float64(line[3:5])
         normal = normal/norm(normal) # make sure normal is actually normal
-        angle = acos(dot(normal, [0,0,1])) # find angle against plane
         readline(m) # Throw away outerloop
         for i = 1:3 # Get vertices
             line = split(lowercase(readline(m)))
             vertices[i] = float64(line[2:4])
         end
         sort!(vertices, by=x->x[3]) # Sort by 3rd index.
-        return Face(vertices, normal, angle)
+        return Face(vertices, normal)
     else
         return Nothing
     end
@@ -135,8 +149,7 @@ end
 
 function (==)(a::Face, b::Face)
     return (a.vertices == b.vertices &&
-            a.normal == b.normal &&
-            a.angle == b.angle)
+            a.normal == b.normal)
 end
 
 ################################################################################
@@ -153,14 +166,6 @@ end
 #       p0, p1, p2 are expected to be Arrays of size 3 containing numbers
 #
 ################################################################################
-
-type LineSegment
-    start
-    finish
-    slope
-
-    LineSegment(x,y) = new(x,y,(x[1]-y[1])/(x[2]-y[2])) # compute slope
-end
 
 function LineSegment(f::Face, z)
 
@@ -215,14 +220,6 @@ end
 #
 ################################################################################
 
-type Bounds
-    xmax
-    ymax
-    zmax
-    xmin
-    ymin
-    zmin
-end
 
 function update!(box::Bounds, face::Face)
     x = sort(face.vertices, by=x->x[1]) # Sort by x

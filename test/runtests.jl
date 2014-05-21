@@ -17,7 +17,7 @@ f = open("./data/cube.stl","r")
 testFace = MeshSlicer.Face(Array[[0.0,0.0,0.0],
                                  [0.0,0.0,10.0],
                                  [0.0,10.0,10.0]],
-                           [-1.0,0.0,0.0], pi/2)
+                           [-1.0,0.0,0.0])
 
 testBounds = MeshSlicer.Bounds(10.0,10.0,10.0,0,0,0)
 
