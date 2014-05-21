@@ -21,7 +21,7 @@ testFace = MeshSlicer.Face(Array[[0.0,0.0,0.0],
 
 testBounds = MeshSlicer.Bounds(10.0,10.0,10.0,0,0,0)
 
-resultmesh = MeshSlicer.PolygonMesh(f)
+resultmesh = MeshSlicer.PolygonMesh(f, :ascii_stl)
 
 Test.with_handler(test_handler) do
     @test resultmesh.faces[1].vertices == testFace.vertices
@@ -46,7 +46,7 @@ close(f)
 # translate([1,2,3])cube([4,5,6]);
 f = open("./data/translated_cube.stl","r")
 testBounds2 = MeshSlicer.Bounds(5.0,7.0,9.0,1.0,2.0,3.0)
-resultmesh2 = MeshSlicer.PolygonMesh(f)
+resultmesh2 = MeshSlicer.PolygonMesh(f, :ascii_stl)
 Test.with_handler(test_handler) do
     @test resultmesh2.bounds.xmax == testBounds2.xmax
     @test resultmesh2.bounds.ymax == testBounds2.ymax

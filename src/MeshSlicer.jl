@@ -37,7 +37,7 @@ end
 function slice(path::String, thickness)
     file = open(path, "r")
 
-    mesh = PolygonMesh(file)
+    mesh = PolygonMesh(file, :ascii_stl)
 
     close(file)
 
@@ -89,20 +89,22 @@ end
 #
 ################################################################################
 
-function PolygonMesh(m::IOStream)
+function PolygonMesh(m::IOStream, s::Symbol)
     # create a mesh representation 
-    
+
     faces = Face[]
     bounds = Bounds(0,0,0,Inf,Inf,Inf)
-    
-    while !eof(m)
-        f = Face(m)
-        if f != Nothing
-            push!(faces, f)
-            update!(bounds, f)
+
+    if s == :ascii_stl
+        while !eof(m)
+            f = Face(m, s)
+            if f != Nothing
+                push!(faces, f)
+                update!(bounds, f)
+            end
         end
     end
-    
+
     return PolygonMesh(bounds, faces)
 end
 
@@ -121,7 +123,7 @@ end
 #
 ################################################################################
 
-function Face(m::IOStream)
+function Face(m::IOStream, s::Symbol)
     #  facet normal -1 0 0
     #    outer loop
     #      vertex 0 0 10
@@ -129,21 +131,23 @@ function Face(m::IOStream)
     #      vertex 0 0 0
     #    endloop
     #  endfacet
-    vertices = [zeros(3) for i = 1:3]
-    normal = zeros(3)
-    line = split(lowercase(readline(m)))
-    if line[1] == "facet"
-        normal = float64(line[3:5])
-        normal = normal/norm(normal) # make sure normal is actually normal
-        readline(m) # Throw away outerloop
-        for i = 1:3 # Get vertices
-            line = split(lowercase(readline(m)))
-            vertices[i] = float64(line[2:4])
+    if s == :ascii_stl
+        vertices = [zeros(3) for i = 1:3]
+        normal = zeros(3)
+        line = split(lowercase(readline(m)))
+        if line[1] == "facet"
+            normal = float64(line[3:5])
+            normal = normal/norm(normal) # make sure normal is actually normal
+            readline(m) # Throw away outerloop
+            for i = 1:3 # Get vertices
+                line = split(lowercase(readline(m)))
+                vertices[i] = float64(line[2:4])
+            end
+            sort!(vertices, by=x->x[3]) # Sort by 3rd index.
+            return Face(vertices, normal)
+        else
+            return Nothing
         end
-        sort!(vertices, by=x->x[3]) # Sort by 3rd index.
-        return Face(vertices, normal)
-    else
-        return Nothing
     end
 end
 
