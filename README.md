@@ -6,6 +6,10 @@ This is a library for slicing [polygon mesh](http://en.wikipedia.org/wiki/Polygo
 ## Install
 This package is not yet in the Julia package repository. For now, you can call ```Pkg.clone(https://github.com/sjkelly/MeshSlicer.jl.git)``` in the Julia REPL.
 
+## Supported File Formats
+* STL (ASCII and Binary)
+
+
 ## API Reference
 To be completed.
 
