@@ -33,44 +33,20 @@ type PolygonSlice
 end
 
 
-function slice(path::String, thickness::Float64)
+function PolygonSlice(mesh::PolygonMesh, height::Float64)
 
-    mesh = PolygonMesh(path)
+    segmentlist = LineSegment[]
 
-    startZ = mesh.bounds.zmin
-
-    #We can only print an integer number of layers
-    layercount = round((mesh.bounds.zmax - mesh.bounds.zmin)/thickness)
-
-    #Adjust sliceheight
-    sliceheight = (mesh.bounds.zmax - mesh.bounds.zmin)/layercount
-
-    layers = [mesh.bounds.zmin:sliceheight:mesh.bounds.zmax]
-
-    segmentlist = Array(PolygonSlice,convert(Int64,layercount))
-
-    for i = 1:layercount
-        segmentlist[i] = PolygonSlice(LineSegment[],layers[i])
-    end
-
-    #println(segmentlist)
     for face in mesh.faces
-
-        initialSlice = convert(Int64, floor((face.vertices[1][3] - mesh.bounds.zmin)/sliceheight))
-        finalSlice = convert(Int64, floor((face.vertices[3][3] - mesh.bounds.zmin)/sliceheight))
-
-        locallayer = layers[initialSlice+1:finalSlice]
-
-        index = initialSlice + 1
-        for layer in locallayer
-            seg = LineSegment(face, layer)
+        if face.vertices[1][3] <= height <= face.vertices[3][3]
+            seg = LineSegment(face, height)
             if seg != None
-                push!(segmentlist[index].segments, seg)
+                push!(segmentlist, seg)
             end
-            index = index + 1
         end
     end
-    return segmentlist
+
+    return PolygonSlice(segmentlist, height)
 end
 
 ################################################################################
@@ -209,7 +185,7 @@ function LineSegment(f::Face, z::Float64)
 
 end
 
-function LineSegment(p0::Array{Float64}, p1::Array{Float64}, p2::Array{Float64}, z::Float64, normal::Array{Float64})
+function LineSegment(p0::Array, p1::Array, p2::Array, z::Float64, normal::Array)
     start = zeros(2)
     finish = zeros(2)
     start[1] = p0[1] + (p1[1] - p0[1]) * (z - p0[3]) / (p1[3] - p0[3]);
@@ -259,4 +235,5 @@ function (==)(a::Bounds, b::Bounds)
             a.zmin == b.zmin)
 end
 
+export Bounds, Face, PolygonMesh, LineSegment, PolygonSlice, update!
 end # module

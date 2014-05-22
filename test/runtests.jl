@@ -50,6 +50,8 @@ Test.with_handler(test_handler) do
     @test resultmesh2.bounds.zmin == testBounds2.zmin
     @test resultmesh2.bounds == testBounds2
 end
+println(resultmesh2)
+println(PolygonSlice(resultmesh2, 5.0))
 
 
 # Test getlinesegment
