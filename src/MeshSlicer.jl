@@ -64,7 +64,7 @@ function slice(path::String, thickness::Float64)
         index = initialSlice + 1
         for layer in locallayer
             seg = LineSegment(face, layer)
-            if seg != Nothing
+            if seg != None
                 push!(segmentlist[index].segments, seg)
             end
             index = index + 1
@@ -107,7 +107,7 @@ function PolygonMesh(path::String)
     # Construct mesh
     while !eof(file)
         f = Face(file, s)
-        if f != Nothing
+        if f != None
             push!(faces, f)
             update!(bounds, f)
         end
@@ -161,8 +161,8 @@ function Face(m::IOStream, s::Symbol)
         return Face(vertices, normal)
     end
 
-    # If we can't find anything, return nothing
-    return Nothing
+    # If we can't find anything, return none
+    return None
 end
 
 function (==)(a::Face, b::Face)
@@ -204,7 +204,7 @@ function LineSegment(f::Face, z::Float64)
     elseif p2[3] > z && p1[3] < z && p0[3] < z
         return LineSegment(p2, p0, p1, z, f.normal)
     else
-        return Nothing
+        return None
     end
 
 end
