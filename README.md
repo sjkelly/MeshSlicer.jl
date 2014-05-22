@@ -20,7 +20,7 @@ To be completed.
 [![Build Status](https://travis-ci.org/sjkelly/MeshSlicer.jl.svg)](https://travis-ci.org/sjkelly/MeshSlicer.jl)
 [![Coverage Status](https://img.shields.io/coveralls/sjkelly/MeshSlicer.jl.svg)](https://coveralls.io/r/sjkelly/MeshSlicer.jl)
 
-This package is being developed under the latest [development verion of Julia](https://github.com/julialang/julia). Therefore it might be incompatible with older releases.
+This package is developed under the latest [development verion of Julia](https://github.com/julialang/julia).
 
 ## License
 The MeshSlicer.jl package is licensed under the MIT "Expat" License. See [LICENSE.md](./LICENSE.md).
