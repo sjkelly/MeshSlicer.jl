@@ -103,6 +103,33 @@ function PolygonMesh(path::String)
     return PolygonMesh(bounds, faces)
 end
 
+function rotate!(mesh::PolygonMesh, angle::Float64, axis::Array{Float64}, through::Array{Float64})
+    axis = axis/norm(axis) # normalize axis
+    x, y, z = ones(3)
+    a, b, c = through
+    u, v, w = axis
+    for face in mesh.faces
+# This doesn't work for some reason (scoping)
+#         for vertex in face.vertices
+#            x, y, z = vertex
+#            vertex = rotate(x, y, z, a, b, c, u, v, w, angle)
+#         end
+        for i = 1:3
+            x, y, z = face.vertices[i]
+            face.vertices[i] = rotate(x, y, z, a, b, c, u, v, w, angle)
+        end
+        sort!(face.vertices, by=x->x[3])
+        update!(mesh.bounds, face)
+    end
+end
+
+function rotate(x, y, z, a, b, c, u, v, w, angle)
+    # See: http://inside.mines.edu/~gmurray/ArbitraryAxisRotation/#x1-10011
+    return [(a*(v^2+w^2)-u*(b*v+c*w-u*x-v*y-w*z))*(1-cos(angle))+x*cos(angle)+(-c*v+b*w-w*y+v*z)*sin(angle),
+            (b*(u^2+w^2)-v*(a*u+c*w-u*x-v*y-w*z))*(1-cos(angle))+y*cos(angle)+(c*u-a*w+w*x-u*z)*sin(angle),
+            (c*(u^2+v^2)-w*(a*u+b*v-u*x-v*y-w*z))*(1-cos(angle))+z*cos(angle)+(-b*u+a*v-v*x+u*y)*sin(angle)]
+
+end
 
 ################################################################################
 #
@@ -250,5 +277,5 @@ function (==)(a::Bounds, b::Bounds)
             a.zmin == b.zmin)
 end
 
-export Bounds, Face, PolygonMesh, LineSegment, PolygonSlice, update!
+export Bounds, Face, PolygonMesh, LineSegment, PolygonSlice, update!, rotate!
 end # module

@@ -66,4 +66,6 @@ println(MeshSlicer.LineSegment(testpoints[2],testpoints[1],testpoints[3], 0.5, n
 
 # test binary STL
 binarymesh = MeshSlicer.PolygonMesh("./data/cube_binary.stl")
-
+println(binarymesh)
+rotate!(binarymesh, 45.0, [1.0,0.0,0.0], [0.0,0.0,0.0])
+println(binarymesh)
