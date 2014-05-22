@@ -32,6 +32,16 @@ type PolygonSlice
     layer::Float64
 end
 
+################################################################################
+#
+# PolygonSlice:
+#   segments
+#   layer
+#
+# Outer Constructors:
+#   PolygonSlice(PolygonMesh, height::Float64
+#
+################################################################################
 
 function PolygonSlice(mesh::PolygonMesh, height::Float64)
 
@@ -93,7 +103,6 @@ function PolygonMesh(path::String)
     return PolygonMesh(bounds, faces)
 end
 
-
 ################################################################################
 #
 # Face:
@@ -103,8 +112,9 @@ end
 #
 #
 # outer constructors:
-#   Face(f::IOStream)
-#       Pulls a face from an STL file IOStream
+#   Face(f::IOStream, s::Symbol)
+#       Pulls a face from an STL file IOStream with type symbol
+#       Symbol can be :ascii_stl, :binary_stl
 #
 ################################################################################
 
@@ -155,8 +165,8 @@ end
 #       slope in slice plane, computed automatically by inner constructor
 #
 # outer constructors:
-#   LineSegment(f::Face, z::Number)
-#   LineSegment(p0, p1, p2, z::Number)
+#   LineSegment(f::Face, z::Number, normal)
+#   LineSegment(p0, p1, p2, z::Number, normal)
 #       p0, p1, p2 are expected to be Arrays of size 3 containing numbers
 #
 ################################################################################
@@ -210,6 +220,10 @@ end
 #   xmin
 #   ymin
 #   zmin
+#
+# Methods:
+#   update!(Bounds, Face)
+#       update the bounds against a face
 #
 ################################################################################
 
