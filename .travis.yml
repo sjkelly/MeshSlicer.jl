@@ -13,7 +13,6 @@ before_install:
   - sudo apt-get update -qq -y
   - sudo apt-get install libpcre3-dev julia -y
 script:
-  - if [ $JULIAVERSION = "julianightlies" ]; julia --code-coverage -e 'Pkg.init(); Pkg.clone(pwd()); Pkg.test("MeshSlicer")'; fi
-  - if [ $JULIAVERSION = "juliareleases" ]; then julia -e 'Pkg.init(); Pkg.clone(pwd()); Pkg.test("MeshSlicer")'; fi
+  - julia --code-coverage -e 'Pkg.init(); Pkg.clone(pwd()); Pkg.test("MeshSlicer")'
 after_success:
-  - if [ $JULIAVERSION = "julianightlies" ]; then julia -e 'cd(Pkg.dir("MeshSlicer")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'; fi
+  - julia -e 'cd(Pkg.dir("MeshSlicer")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
