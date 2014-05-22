@@ -103,6 +103,7 @@ function PolygonMesh(path::String)
     return PolygonMesh(bounds, faces)
 end
 
+
 ################################################################################
 #
 # Face:
@@ -141,8 +142,8 @@ function Face(m::IOStream, s::Symbol)
         end
 
     elseif s == :binary_stl
-        normal = [read(m, Float32) for i = 1:3]
-        vertices = [[read(m, Float32) for i = 1:3] for j = 1:3]
+        normal = [float64(read(m, Float32)) for i = 1:3]
+        vertices = [[float64(read(m, Float32)) for i = 1:3] for j = 1:3]
         read(m, Uint16) # throwout attribute
         return Face(vertices, normal)
     end
@@ -195,7 +196,7 @@ function LineSegment(f::Face, z::Float64)
 
 end
 
-function LineSegment(p0::Array, p1::Array, p2::Array, z::Float64, normal::Array)
+function LineSegment(p0::Array{Float64}, p1::Array{Float64}, p2::Array{Float64}, z::Float64, normal::Array{Float64})
     start = zeros(2)
     finish = zeros(2)
     start[1] = p0[1] + (p1[1] - p0[1]) * (z - p0[3]) / (p1[3] - p0[3]);
