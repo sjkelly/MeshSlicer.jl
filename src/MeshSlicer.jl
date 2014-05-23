@@ -277,5 +277,5 @@ function (==)(a::Bounds, b::Bounds)
             a.zmin == b.zmin)
 end
 
-export Bounds, Face, PolygonMesh, LineSegment, PolygonSlice, update!, rotate!
+export Bounds, Face, PolygonMesh, LineSegment, PolygonSlice, update!, rotate!, rotate
 end # module
