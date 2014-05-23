@@ -1,6 +1,8 @@
 using MeshSlicer
 using Base.Test
 
+# Since we use relative paths, you need to test from MeshSlicer/test
+
 # setup test handlers
 test_handler(r::Test.Success) = println("Test success: $(r.expr)")
 test_handler(r::Test.Failure) = error("Test fail: $(r.expr)")
@@ -10,14 +12,14 @@ test_handler(r::Test.Error) = rethrow(r)
 println("Testing PolygonMesh...")
 
 # get the first face from cube.stl
-testFace = MeshSlicer.Face(Array[[0.0,0.0,0.0],
-                                 [0.0,0.0,10.0],
-                                 [0.0,10.0,10.0]],
-                           [-1.0,0.0,0.0])
+testFace = Face(Array[[0.0,0.0,0.0],
+                      [0.0,0.0,10.0],
+                      [0.0,10.0,10.0]],
+                      [-1.0,0.0,0.0])
 
-testBounds = MeshSlicer.Bounds(10.0,10.0,10.0,0,0,0)
+testBounds = Bounds(10.0,10.0,10.0,0,0,0)
 
-resultmesh = MeshSlicer.PolygonMesh("./data/cube.stl")
+resultmesh = PolygonMesh("./data/cube.stl")
 
 Test.with_handler(test_handler) do
     @test resultmesh.faces[1].vertices == testFace.vertices
@@ -39,8 +41,8 @@ end
 
 # Test bounds on translated cube
 # translate([1,2,3])cube([4,5,6]);
-testBounds2 = MeshSlicer.Bounds(5.0,7.0,9.0,1.0,2.0,3.0)
-resultmesh2 = MeshSlicer.PolygonMesh("./data/translated_cube.stl")
+testBounds2 = Bounds(5.0,7.0,9.0,1.0,2.0,3.0)
+resultmesh2 = PolygonMesh("./data/translated_cube.stl")
 Test.with_handler(test_handler) do
     @test resultmesh2.bounds.xmax == testBounds2.xmax
     @test resultmesh2.bounds.ymax == testBounds2.ymax
@@ -57,15 +59,15 @@ println(PolygonSlice(resultmesh2, 5.0))
 # Test getlinesegment
 testpoints = Array[[0.0,0.0,0.0],[0.0,1.0,0.0],[0.0,1.0,1.0]]
 normal = [1.0, 1.0, 1.0]
-println(MeshSlicer.LineSegment(testpoints[1],testpoints[2],testpoints[3], 0.5, normal))
-println(MeshSlicer.LineSegment(testpoints[1],testpoints[3],testpoints[2], 0.5, normal))
-println(MeshSlicer.LineSegment(testpoints[3],testpoints[1],testpoints[2], 0.5, normal))
-println(MeshSlicer.LineSegment(testpoints[3],testpoints[2],testpoints[1], 0.5, normal))
-println(MeshSlicer.LineSegment(testpoints[2],testpoints[3],testpoints[1], 0.5, normal))
-println(MeshSlicer.LineSegment(testpoints[2],testpoints[1],testpoints[3], 0.5, normal))
+println(LineSegment(testpoints[1],testpoints[2],testpoints[3], 0.5, normal))
+println(LineSegment(testpoints[1],testpoints[3],testpoints[2], 0.5, normal))
+println(LineSegment(testpoints[3],testpoints[1],testpoints[2], 0.5, normal))
+println(LineSegment(testpoints[3],testpoints[2],testpoints[1], 0.5, normal))
+println(LineSegment(testpoints[2],testpoints[3],testpoints[1], 0.5, normal))
+println(LineSegment(testpoints[2],testpoints[1],testpoints[3], 0.5, normal))
 
 # test binary STL
-binarymesh = MeshSlicer.PolygonMesh("./data/cube_binary.stl")
+binarymesh = PolygonMesh("./data/cube_binary.stl")
 println(binarymesh)
 rotate!(binarymesh, 45.0, [1.0,0.0,0.0], [0.0,0.0,0.0])
 println(binarymesh)
