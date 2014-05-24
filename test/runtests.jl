@@ -59,7 +59,7 @@ Test.with_handler(test_handler) do
 end
 
 
-# Test getlinesegment
+# Test LineSegment
 testpoint1 = Array[[0.0,0.0,0.0],[0.0,1.0,0.0],[0.0,1.0,1.0]]
 normal = [1.0, 1.0, 1.0]
 l1 = LineSegment(testpoint1[3],testpoint1[1],testpoint1[2], 0.5, normal)
@@ -80,6 +80,14 @@ Test.with_handler(test_handler) do
     @test l4.start == [0.5, 0.5]
     @test l4.finish == [0.5, 1.0]
     @test l5.start == [0.5, 1.0]
+end
+
+l6 = LineSegment(testFace, 5.0)
+
+Test.with_handler(test_handler) do
+    @test l6.start == [0.0, 5.0]
+    @test l6.finish == [0.0, 0.0]
+    @test l6.normal == [-1.0,0.0,0.0]
 end
 
 # test binary STL
