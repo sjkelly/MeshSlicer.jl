@@ -50,7 +50,7 @@ function PolygonSlice(mesh::PolygonMesh, height::Float64)
     for face in mesh.faces
         if face.vertices[1][3] <= height <= face.vertices[3][3]
             seg = LineSegment(face, height)
-            if seg != None
+            if seg != Nothing
                 push!(segmentlist, seg)
             end
         end
@@ -93,7 +93,7 @@ function PolygonMesh(path::String)
     # Construct mesh
     while !eof(file)
         f = Face(file, s)
-        if f != None
+        if f != Nothing
             push!(faces, f)
             update!(bounds, f)
         end
@@ -175,8 +175,8 @@ function Face(m::IOStream, s::Symbol)
         return Face(vertices, normal)
     end
 
-    # If we can't find anything, return none
-    return None
+    # If we can't find anything, return nothing
+    return Nothing
 end
 
 function (==)(a::Face, b::Face)
@@ -218,7 +218,7 @@ function LineSegment(f::Face, z::Float64)
     elseif p2[3] > z && p1[3] < z && p0[3] < z
         return LineSegment(p2, p0, p1, z, f.normal)
     else
-        return None
+        return Nothing
     end
 
 end
