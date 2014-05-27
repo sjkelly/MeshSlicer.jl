@@ -1,5 +1,7 @@
 module MeshSlicer
 
+using ImmutableArrays
+
 type Bounds
     xmax::Float64
     ymax::Float64
@@ -10,10 +12,10 @@ type Bounds
 end
 
 type Face
-    vertices::Array{Array}
-    normal::Array{Float64}
+    vertices::Array{Vector3{Float64}}
+    normal::Vector3{Float64}
 
-    Face(v, n) = new(sort!(v, by=x->x[3]), n/norm(n))
+    Face(v, n) = new(sort!(v, by=x->x.e3), n/norm(n))
 end
 
 type PolygonMesh
@@ -22,9 +24,9 @@ type PolygonMesh
 end
 
 type LineSegment
-    start::Array{Float64}
-    finish::Array{Float64}
-    normal::Array{Float64}
+    start::Vector2{Float64}
+    finish::Vector2{Float64}
+    normal::Vector3{Float64}
 end
 
 type PolygonSlice
@@ -48,7 +50,7 @@ function PolygonSlice(mesh::PolygonMesh, height::Float64)
     segmentlist = LineSegment[]
 
     for face in mesh.faces
-        if face.vertices[1][3] <= height <= face.vertices[3][3]
+        if face.vertices[1].e3 <= height <= face.vertices[3].e3
             seg = LineSegment(face, height)
             if seg != nothing
                 push!(segmentlist, seg)
@@ -105,7 +107,7 @@ end
 
 function rotate!(mesh::PolygonMesh, angle::Float64, axis::Array{Float64}, through::Array{Float64})
     axis = axis/norm(axis) # normalize axis
-    x, y, z = ones(3)
+    x, y, z = zeros(3)
     a, b, c = through
     u, v, w = axis
     for face in mesh.faces
@@ -118,16 +120,16 @@ function rotate!(mesh::PolygonMesh, angle::Float64, axis::Array{Float64}, throug
             x, y, z = face.vertices[i]
             face.vertices[i] = rotate(x, y, z, a, b, c, u, v, w, angle)
         end
-        sort!(face.vertices, by=x->x[3])
+        sort!(face.vertices, by=x->x.e3)
         update!(mesh.bounds, face)
     end
 end
 
 function rotate(x, y, z, a, b, c, u, v, w, angle)
     # See: http://inside.mines.edu/~gmurray/ArbitraryAxisRotation/#x1-10011
-    return [(a*(v^2+w^2)-u*(b*v+c*w-u*x-v*y-w*z))*(1-cos(angle))+x*cos(angle)+(-c*v+b*w-w*y+v*z)*sin(angle),
+    return Vector3((a*(v^2+w^2)-u*(b*v+c*w-u*x-v*y-w*z))*(1-cos(angle))+x*cos(angle)+(-c*v+b*w-w*y+v*z)*sin(angle),
             (b*(u^2+w^2)-v*(a*u+c*w-u*x-v*y-w*z))*(1-cos(angle))+y*cos(angle)+(c*u-a*w+w*x-u*z)*sin(angle),
-            (c*(u^2+v^2)-w*(a*u+b*v-u*x-v*y-w*z))*(1-cos(angle))+z*cos(angle)+(-b*u+a*v-v*x+u*y)*sin(angle)]
+            (c*(u^2+v^2)-w*(a*u+b*v-u*x-v*y-w*z))*(1-cos(angle))+z*cos(angle)+(-b*u+a*v-v*x+u*y)*sin(angle))
 
 end
 
@@ -154,23 +156,23 @@ function Face(m::IOStream, s::Symbol)
     #      vertex 0 0 0
     #    endloop
     #  endfacet
-    vertices = [zeros(3) for i = 1:3]
-    normal = zeros(3)
+    vertices = Vector3[Vector3(zeros(3)) for i = 1:3]
+    normal = Vector3(zeros(3))
     if s == :ascii_stl
         line = split(lowercase(readline(m)))
         if line[1] == "facet"
-            normal = float64(line[3:5])
+            normal = Vector3(float64(line[3:5]))
             readline(m) # Throw away outerloop
             for i = 1:3 # Get vertices
                 line = split(lowercase(readline(m)))
-                vertices[i] = float64(line[2:4])
+                vertices[i] = Vector3(float64(line[2:4]))
             end
             return Face(vertices, normal)
         end
 
     elseif s == :binary_stl
-        normal = [float64(read(m, Float32)) for i = 1:3]
-        vertices = [[float64(read(m, Float32)) for i = 1:3] for j = 1:3]
+        normal = Vector3([float64(read(m, Float32)) for i = 1:3])
+        vertices = Vector3[Vector3([float64(read(m, Float32)) for i = 1:3]) for j = 1:3]
         read(m, Uint16) # throwout attribute
         return Face(vertices, normal)
     end
@@ -205,17 +207,17 @@ function LineSegment(f::Face, z::Float64)
     p1 = f.vertices[2]
     p2 = f.vertices[3]
 
-    if p0[3] < z && p1[3] >= z && p2[3] >= z
+    if p0.e3 < z && p1.e3 >= z && p2.e3 >= z
         return LineSegment(p0, p2, p1, z, f.normal)
-    elseif p0[3] > z && p1[3] < z && p2[3] < z
+    elseif p0.e3 > z && p1.e3 < z && p2.e3 < z
         return LineSegment(p0, p1, p2, z, f.normal)
-    elseif p1[3] < z && p0[3] >= z && p2[3] >= z
+    elseif p1.e3 < z && p0.e3 >= z && p2.e3 >= z
         return LineSegment(p1, p0, p2, z, f.normal)
-    elseif p1[3] > z && p0[3] < z && p2[3] < z
+    elseif p1.e3 > z && p0.e3 < z && p2.e3 < z
         return LineSegment(p1, p2, p0, z, f.normal)
-    elseif p2[3] < z && p1[3] >= z && p0[3] >= z
+    elseif p2.e3 < z && p1.e3 >= z && p0.e3 >= z
         return LineSegment(p2, p1, p0, z, f.normal)
-    elseif p2[3] > z && p1[3] < z && p0[3] < z
+    elseif p2.e3 > z && p1.e3 < z && p0.e3 < z
         return LineSegment(p2, p0, p1, z, f.normal)
     else
         return nothing
@@ -223,13 +225,11 @@ function LineSegment(f::Face, z::Float64)
 
 end
 
-function LineSegment(p0::Array{Float64}, p1::Array{Float64}, p2::Array{Float64}, z::Float64, normal::Array{Float64})
-    start = zeros(2)
-    finish = zeros(2)
-    start[1] = p0[1] + (p1[1] - p0[1]) * (z - p0[3]) / (p1[3] - p0[3]);
-    start[2] = p0[2] + (p1[2] - p0[2]) * (z - p0[3]) / (p1[3] - p0[3]);
-    finish[1] = p0[1] + (p2[1] - p0[1]) * (z - p0[3]) / (p2[3] - p0[3]);
-    finish[2] = p0[2] + (p2[2] - p0[2]) * (z - p0[3]) / (p2[3] - p0[3]);
+function LineSegment(p0::Vector3, p1::Vector3, p2::Vector3, z::Float64, normal::Vector3)
+    start = Vector2(p0.e1 + (p1.e1 - p0.e1) * (z - p0.e3) / (p1.e3 - p0.e3),
+                    p0.e2 + (p1.e2 - p0.e2) * (z - p0.e3) / (p1.e3 - p0.e3))
+    finish = Vector2(p0.e1 + (p2.e1 - p0.e1) * (z - p0.e3) / (p2.e3 - p0.e3),
+                     p0.e2 + (p2.e2 - p0.e2) * (z - p0.e3) / (p2.e3 - p0.e3))
     return LineSegment(start, finish, normal);
 end
 
@@ -257,15 +257,15 @@ end
 
 
 function update!(box::Bounds, face::Face)
-    x = sort(face.vertices, by=x->x[1]) # Sort by x
-    y = sort(face.vertices, by=x->x[2]) # Sort by y
+    x = sort(face.vertices, by=x->x.e1) # Sort by x
+    y = sort(face.vertices, by=x->x.e2) # Sort by y
 
-    box.xmin = min(x[1][1], box.xmin)
-    box.ymin = min(y[1][2], box.ymin)
-    box.zmin = min(face.vertices[1][3], box.zmin)
-    box.xmax = max(x[3][1], box.xmax)
-    box.ymax = max(y[3][2], box.ymax)
-    box.zmax = max(face.vertices[3][3], box.zmax)
+    box.xmin = min(x[1].e1, box.xmin)
+    box.ymin = min(y[1].e2, box.ymin)
+    box.zmin = min(face.vertices[1].e3, box.zmin)
+    box.xmax = max(x[3].e1, box.xmax)
+    box.ymax = max(y[3].e2, box.ymax)
+    box.zmax = max(face.vertices[3].e3, box.zmax)
 end
 
 function (==)(a::Bounds, b::Bounds)

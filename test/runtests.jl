@@ -1,5 +1,6 @@
 using MeshSlicer
 using Base.Test
+using ImmutableArrays
 
 # Since we use relative paths, you need to test from MeshSlicer/test
 
@@ -12,10 +13,10 @@ test_handler(r::Test.Error) = rethrow(r)
 println("Testing PolygonMesh...")
 
 # get the first face from cube.stl
-testFace = Face(Array[[0.0,0.0,0.0],
-                      [0.0,0.0,10.0],
-                      [0.0,10.0,10.0]],
-                      [-1.0,0.0,0.0])
+testFace = Face(Vector3[Vector3(0.0,0.0,0.0),
+                      Vector3(0.0,0.0,10.0),
+                      Vector3(0.0,10.0,10.0)],
+                      Vector3(-1.0,0.0,0.0))
 
 testBounds = Bounds(10.0,10.0,10.0,0,0,0)
 
@@ -42,10 +43,10 @@ end
 # Test bounds on translated cube
 # translate([1,2,3])cube([4,5,6]);
 testBounds2 = Bounds(4.0,6.0,9.0,1.0,2.0,4.0)
-updateFace = Face(Array[[5.0,3.0,4.0],
+updateFace = Face(Vector3[[5.0,3.0,4.0],
                       [2.0,7.0,4.0],
                       [2.0,3.0,3.0]],
-                      [-1.0,0.0,0.0]) # contains correct bounds for cube
+                      Vector3(-1.0,0.0,0.0)) # contains correct bounds for cube
 update!(testBounds2, updateFace)
 resultmesh2 = PolygonMesh("./data/translated_cube.stl")
 Test.with_handler(test_handler) do
@@ -60,34 +61,34 @@ end
 
 
 # Test LineSegment
-testpoint1 = Array[[0.0,0.0,0.0],[0.0,1.0,0.0],[0.0,1.0,1.0]]
-normal = [1.0, 1.0, 1.0]
+testpoint1 = Vector3[[0.0,0.0,0.0],[0.0,1.0,0.0],[0.0,1.0,1.0]]
+normal = Vector3(1.0, 1.0, 1.0)
 l1 = LineSegment(testpoint1[3],testpoint1[1],testpoint1[2], 0.5, normal)
 l2 = LineSegment(testpoint1[3],testpoint1[2],testpoint1[1], 0.5, normal)
 l3 = LineSegment(testpoint1[3],testpoint1[2],testpoint1[1], 0.0, normal)
 
-testpoint2 = Array[[0.0,0.0,0.0],[1.0,1.0,1.0],[0.0,1.0,0.0]]
+testpoint2 = Vector3[[0.0,0.0,0.0],[1.0,1.0,1.0],[0.0,1.0,0.0]]
 l4 = LineSegment(testpoint2[2],testpoint2[1],testpoint2[3], 0.5, normal)
 l5 = LineSegment(testpoint2[2],testpoint2[3],testpoint2[1], 0.5, normal)
 
 Test.with_handler(test_handler) do
-    @test l1.start == [0.0, 0.5]
-    @test l1.finish == [0.0, 1.0]
-    @test l2.start == [0.0, 1.0]
-    @test l2.finish == [0.0, 0.5]
-    @test l3.start == [0.0, 1.0]
-    @test l3.finish == [0.0, 0.0]
-    @test l4.start == [0.5, 0.5]
-    @test l4.finish == [0.5, 1.0]
-    @test l5.start == [0.5, 1.0]
+    @test l1.start == Vector2(0.0, 0.5)
+    @test l1.finish == Vector2(0.0, 1.0)
+    @test l2.start == Vector2(0.0, 1.0)
+    @test l2.finish == Vector2(0.0, 0.5)
+    @test l3.start == Vector2(0.0, 1.0)
+    @test l3.finish == Vector2(0.0, 0.0)
+    @test l4.start == Vector2(0.5, 0.5)
+    @test l4.finish == Vector2(0.5, 1.0)
+    @test l5.start == Vector2(0.5, 1.0)
 end
 
 l6 = LineSegment(testFace, 5.0)
 
 Test.with_handler(test_handler) do
-    @test l6.start == [0.0, 5.0]
-    @test l6.finish == [0.0, 0.0]
-    @test l6.normal == [-1.0,0.0,0.0]
+    @test l6.start == Vector2(0.0, 5.0)
+    @test l6.finish == Vector2(0.0, 0.0)
+    @test l6.normal == Vector3(-1.0,0.0,0.0)
 end
 
 # test binary STL
