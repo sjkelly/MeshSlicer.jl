@@ -51,11 +51,39 @@ function PolygonSlice(mesh::PolygonMesh, height::Float64)
 
     for face in mesh.faces
         if face.vertices[1].e3 <= height <= face.vertices[3].e3
-            push!(segmentlist, LineSegment(face, height))
+            seg = LineSegment(face, height)
+            if seg != nothing
+                push!(segmentlist, seg)
+            end
         end
     end
 
     return PolygonSlice(segmentlist, height)
+end
+
+function PolygonSlice(mesh::PolygonMesh, heights::Array{Float64})
+
+    slices = PolygonSlice[]
+    for height in heights
+        push!(slices, PolygonSlice(LineSegment[],height))
+    end
+
+    segmentlist = LineSegment[]
+
+    for face in mesh.faces
+        i = 1
+        for height in heights
+            if face.vertices[1].e3 <= height <= face.vertices[3].e3
+                seg = LineSegment(face, height)
+                if seg != nothing
+                    push!(slices[i].segments, seg)
+                end
+            end
+            i = i + 1
+        end
+    end
+
+    return slices
 end
 
 ################################################################################
@@ -210,6 +238,8 @@ function LineSegment(f::Face, z::Float64)
         return LineSegment(p2, p1, p0, z, f.normal)
     elseif p2.e3 > z && p1.e3 < z && p0.e3 < z
         return LineSegment(p2, p0, p1, z, f.normal)
+    else
+        return nothing
     end
 
 end
