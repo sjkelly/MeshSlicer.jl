@@ -51,10 +51,7 @@ function PolygonSlice(mesh::PolygonMesh, height::Float64)
 
     for face in mesh.faces
         if face.vertices[1].e3 <= height <= face.vertices[3].e3
-            seg = LineSegment(face, height)
-            if seg != nothing
-                push!(segmentlist, seg)
-            end
+            push!(segmentlist, LineSegment(face, height))
         end
     end
 
@@ -107,7 +104,6 @@ end
 
 function rotate!(mesh::PolygonMesh, angle::Float64, axis::Array{Float64}, through::Array{Float64})
     axis = axis/norm(axis) # normalize axis
-    x, y, z = zeros(3)
     a, b, c = through
     u, v, w = axis
     for face in mesh.faces
@@ -156,23 +152,18 @@ function Face(m::IOStream, s::Symbol)
     #      vertex 0 0 0
     #    endloop
     #  endfacet
-    vertices = Vector3[Vector3(zeros(3)) for i = 1:3]
-    normal = Vector3(zeros(3))
     if s == :ascii_stl
         line = split(lowercase(readline(m)))
         if line[1] == "facet"
             normal = Vector3(float64(line[3:5]))
             readline(m) # Throw away outerloop
-            for i = 1:3 # Get vertices
-                line = split(lowercase(readline(m)))
-                vertices[i] = Vector3(float64(line[2:4]))
-            end
+            vertices = [Vector3(float64(split(readline(m))[2:4])) for i = 1:3]
             return Face(vertices, normal)
         end
 
     elseif s == :binary_stl
         normal = Vector3([float64(read(m, Float32)) for i = 1:3])
-        vertices = Vector3[Vector3([float64(read(m, Float32)) for i = 1:3]) for j = 1:3]
+        vertices = [Vector3([float64(read(m, Float32)) for i = 1:3]) for j = 1:3]
         read(m, Uint16) # throwout attribute
         return Face(vertices, normal)
     end
@@ -219,8 +210,6 @@ function LineSegment(f::Face, z::Float64)
         return LineSegment(p2, p1, p0, z, f.normal)
     elseif p2.e3 > z && p1.e3 < z && p0.e3 < z
         return LineSegment(p2, p0, p1, z, f.normal)
-    else
-        return nothing
     end
 
 end
