@@ -13,19 +13,20 @@ test_handler(r::Test.Error) = rethrow(r)
 println("Testing PolygonMesh...")
 
 # get the first face from cube.stl
-testFace = Face(Vector3[Vector3(0.0,0.0,0.0),
-                      Vector3(0.0,0.0,10.0),
-                      Vector3(0.0,10.0,10.0)],
-                      Vector3(-1.0,0.0,0.0))
+testFace = Face(Vector3[Vector3(10.0,0.0,0.0),
+                      Vector3(10.0,0.0,10.0),
+                      Vector3(10.0,10.0,10.0)],
+                      Vector3(1.0,0.0,0.0))
 
 testBounds = Bounds{Float64}(10.0,10.0,10.0,0,0,0)
 
 resultmesh = PolygonMesh("./data/cube.stl")
 
+println(resultmesh)
 Test.with_handler(test_handler) do
-    @test resultmesh.faces[1].vertices == testFace.vertices
-    @test resultmesh.faces[1].normal == testFace.normal
-    @test resultmesh.faces[1] == testFace
+    @test resultmesh.faces.vertices == testFace.vertices
+    @test resultmesh.faces.normal == testFace.normal
+    @test resultmesh.faces == testFace
 end
 
 println("Testing Bounds...")
@@ -86,9 +87,9 @@ end
 l6 = LineSegment(testFace, 5.0)
 
 Test.with_handler(test_handler) do
-    @test l6.start == Vector2(0.0, 5.0)
-    @test l6.finish == Vector2(0.0, 0.0)
-    @test l6.normal == Vector3(-1.0,0.0,0.0)
+    @test l6.start == Vector2(10.0, 5.0)
+    @test l6.finish == Vector2(10.0, 0.0)
+    @test l6.normal == Vector3(1.0,0.0,0.0)
 end
 
 # test binary STL

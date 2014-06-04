@@ -2,6 +2,9 @@ module MeshSlicer
 
 using ImmutableArrays
 
+import Base.push!
+
+
 type Bounds{T<:Number}
     xmax::T
     ymax::T
@@ -14,13 +17,14 @@ end
 type Face
     vertices::Array{Vector3{Float64}}
     normal::Vector3{Float64}
+    next::Union(Face,Nothing)
 
-    Face(v, n) = new(sort!(v, by=x->x.e3), n/norm(n))
+    Face(v, n) = new(sort!(v, by=x->x.e3), n/norm(n), nothing)
 end
 
 type PolygonMesh
     bounds::Bounds
-    faces::Array{Face}
+    faces::Union(Face,Nothing)
 end
 
 type LineSegment
@@ -49,7 +53,7 @@ function PolygonSlice(mesh::PolygonMesh, height::Float64)
 
     segmentlist = LineSegment[]
 
-    for face in mesh.faces
+    for face in mesh
         if face.vertices[1].e3 <= height <= face.vertices[3].e3
             seg = LineSegment(face, height)
             if seg != nothing
@@ -70,7 +74,7 @@ function PolygonSlice(mesh::PolygonMesh, heights::Array{Float64})
 
     segmentlist = LineSegment[]
 
-    for face in mesh.faces
+    for face in mesh
         i = 1
         for height in heights
             if face.vertices[1].e3 <= height <= face.vertices[3].e3
@@ -98,12 +102,19 @@ end
 #
 ################################################################################
 
+Base.start(m::PolygonMesh) = m.faces
+Base.next(m::PolygonMesh, state::Face) = (state, state.next)
+Base.done(m::PolygonMesh, state::Face) = false
+Base.done(m::PolygonMesh, state::Nothing) = true
+
+PolygonMesh() = PolygonMesh(Bounds(), nothing)
+
 function PolygonMesh(path::String)
     # create a mesh representation 
     file = open(path, "r")
 
-    faces = Face[]
     bounds = Bounds()
+    mesh = PolygonMesh()
 
     # Discover file type
     if endswith(path, ".stl")
@@ -121,20 +132,22 @@ function PolygonMesh(path::String)
     while !eof(file)
         f = Face(file, s)
         if f != nothing
-            push!(faces, f)
+            push!(mesh, f)
             update!(bounds, f)
         end
     end
 
+    mesh.bounds = bounds
+
     close(file)
-    return PolygonMesh(bounds, faces)
+    return mesh
 end
 
 function rotate!(mesh::PolygonMesh, angle::Float64, axis::Array{Float64}, through::Array{Float64})
     axis = axis/norm(axis) # normalize axis
     a, b, c = through
     u, v, w = axis
-    for face in mesh.faces
+    for face in mesh
         for i = 1:3
             x, y, z = face.vertices[i]
             face.vertices[i] = rotate(x, y, z, a, b, c, u, v, w, angle)
@@ -152,6 +165,14 @@ function rotate(x, y, z, a, b, c, u, v, w, angle)
 
 end
 
+function push!(mesh::PolygonMesh, f::Face)
+    if mesh.faces == nothing
+        mesh.faces = f
+    else
+        f.next = mesh.faces
+        mesh.faces = f
+    end
+end
 ################################################################################
 #
 # Face:
