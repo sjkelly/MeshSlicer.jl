@@ -135,11 +135,6 @@ function rotate!(mesh::PolygonMesh, angle::Float64, axis::Array{Float64}, throug
     a, b, c = through
     u, v, w = axis
     for face in mesh.faces
-# This doesn't work for some reason (scoping)
-#         for vertex in face.vertices
-#            x, y, z = vertex
-#            vertex = rotate(x, y, z, a, b, c, u, v, w, angle)
-#         end
         for i = 1:3
             x, y, z = face.vertices[i]
             face.vertices[i] = rotate(x, y, z, a, b, c, u, v, w, angle)
