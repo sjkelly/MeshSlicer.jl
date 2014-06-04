@@ -13,8 +13,8 @@ test_handler(r::Test.Error) = rethrow(r)
 println("Testing PolygonMesh...")
 
 # get the first face from cube.stl
-testFace = Face(Vector3[Vector3(10.0,0.0,0.0),
-                      Vector3(10.0,0.0,10.0),
+testFace = Face(Vector3[Vector3(10.0,0.0,10.0),
+                      Vector3(10.0,0.0,0.0),
                       Vector3(10.0,10.0,10.0)],
                       Vector3(1.0,0.0,0.0))
 
@@ -85,10 +85,10 @@ Test.with_handler(test_handler) do
 end
 
 l6 = LineSegment(testFace, 5.0)
-
+println(l6)
 Test.with_handler(test_handler) do
-    @test l6.start == Vector2(10.0, 5.0)
-    @test l6.finish == Vector2(10.0, 0.0)
+    @test l6.start == Vector2(10.0, 0.0)
+    @test l6.finish == Vector2(10.0, 5.0)
     @test l6.normal == Vector3(1.0,0.0,0.0)
 end
 

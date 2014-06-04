@@ -19,7 +19,7 @@ type Face
     normal::Vector3{Float64}
     next::Union(Face,Nothing)
 
-    Face(v, n) = new(sort!(v, by=x->x.e3), n/norm(n), nothing)
+    Face(v, n) = new(v, n/norm(n), nothing)
 end
 
 type PolygonMesh
@@ -152,7 +152,6 @@ function rotate!(mesh::PolygonMesh, angle::Float64, axis::Array{Float64}, throug
             x, y, z = face.vertices[i]
             face.vertices[i] = rotate(x, y, z, a, b, c, u, v, w, angle)
         end
-        sort!(face.vertices, by=x->x.e3)
         update!(mesh.bounds, face)
     end
 end
@@ -295,15 +294,16 @@ function Bounds()
 end
 
 function update!(box::Bounds, face::Face)
-    x = sort(face.vertices, by=x->x.e1) # Sort by x
-    y = sort(face.vertices, by=x->x.e2) # Sort by y
+    xmin, xmax = extrema([face.vertices[i].e1 for i = 1:3])
+    ymin, ymax = extrema([face.vertices[i].e2 for i = 1:3])
+    zmin, zmax = extrema([face.vertices[i].e3 for i = 1:3])
 
-    box.xmin = min(x[1].e1, box.xmin)
-    box.ymin = min(y[1].e2, box.ymin)
-    box.zmin = min(face.vertices[1].e3, box.zmin)
-    box.xmax = max(x[3].e1, box.xmax)
-    box.ymax = max(y[3].e2, box.ymax)
-    box.zmax = max(face.vertices[3].e3, box.zmax)
+    box.xmin = min(xmin, box.xmin)
+    box.ymin = min(ymin, box.ymin)
+    box.zmin = min(zmin, box.zmin)
+    box.xmax = max(xmax, box.xmax)
+    box.ymax = max(ymax, box.ymax)
+    box.zmax = max(zmax, box.zmax)
 end
 
 function (==)(a::Bounds, b::Bounds)
