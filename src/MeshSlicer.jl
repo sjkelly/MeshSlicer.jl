@@ -2,13 +2,13 @@ module MeshSlicer
 
 using ImmutableArrays
 
-type Bounds
-    xmax::Float64
-    ymax::Float64
-    zmax::Float64
-    xmin::Float64
-    ymin::Float64
-    zmin::Float64
+type Bounds{T<:Number}
+    xmax::T
+    ymax::T
+    zmax::T
+    xmin::T
+    ymin::T
+    zmin::T
 end
 
 type Face
@@ -103,7 +103,7 @@ function PolygonMesh(path::String)
     file = open(path, "r")
 
     faces = Face[]
-    bounds = Bounds(0,0,0,Inf,Inf,Inf)
+    bounds = Bounds()
 
     # Discover file type
     if endswith(path, ".stl")
@@ -274,6 +274,9 @@ end
 #
 ################################################################################
 
+function Bounds()
+    return Bounds{Float64}(-Inf,-Inf,-Inf,Inf,Inf,Inf)
+end
 
 function update!(box::Bounds, face::Face)
     x = sort(face.vertices, by=x->x.e1) # Sort by x

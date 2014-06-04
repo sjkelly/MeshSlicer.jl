@@ -18,7 +18,7 @@ testFace = Face(Vector3[Vector3(0.0,0.0,0.0),
                       Vector3(0.0,10.0,10.0)],
                       Vector3(-1.0,0.0,0.0))
 
-testBounds = Bounds(10.0,10.0,10.0,0,0,0)
+testBounds = Bounds{Float64}(10.0,10.0,10.0,0,0,0)
 
 resultmesh = PolygonMesh("./data/cube.stl")
 
