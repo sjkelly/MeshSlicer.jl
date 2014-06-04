@@ -19,7 +19,7 @@ type Face
     normal::Vector3{Float64}
     next::Union(Face,Nothing)
 
-    Face(v, n) = new(v, n/norm(n), nothing)
+    Face(v, n) = new(v, n, nothing)
 end
 
 type PolygonMesh
@@ -201,6 +201,8 @@ function Face(m::IOStream, s::Symbol)
             normal = Vector3(float64(line[3:5]))
             readline(m) # Throw away outerloop
             vertices = [Vector3(float64(split(readline(m))[2:4])) for i = 1:3]
+            readline(m) # throwout endloop
+            readline(m) # throwout endfacet
             return Face(vertices, normal)
         end
 
