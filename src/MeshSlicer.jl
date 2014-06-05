@@ -1,7 +1,7 @@
 module MeshSlicer
 
 using ImmutableArrays
-
+using DataStructures
 import Base.push!
 
 export Bounds, Face, PolygonMesh, LineSegment, PolygonSlice,
@@ -19,14 +19,11 @@ end
 type Face
     vertices::Array{Vector3{Float64}}
     normal::Vector3{Float64}
-    next::Union(Face,Nothing)
-
-    Face(v, n) = new(v, n, nothing)
 end
 
 type PolygonMesh
     bounds::Bounds
-    faces::Union(Face,Nothing)
+    faces::LinkedList{Face}
 end
 
 type LineSegment
@@ -50,7 +47,7 @@ function PolygonSlice(mesh::PolygonMesh, height::Float64)
 
     segmentlist = LineSegment[]
 
-    for face in mesh
+    for face in mesh.faces
         zmin, zmax = extrema([face.vertices[j].e3 for j=1:3])
         if height > zmax
             break
@@ -76,7 +73,7 @@ function PolygonSlice(mesh::PolygonMesh, heights::Array{Float64})
         push!(slices, PolygonSlice(LineSegment[],height))
     end
 
-    for face in mesh
+    for face in mesh.faces
         zmin, zmax = extrema([face.vertices[j].e3 for j=1:3])
         i = 1
         for height in heights
@@ -101,12 +98,7 @@ end
 #
 ################################################################################
 
-Base.start(m::PolygonMesh) = m.faces
-Base.next(m::PolygonMesh, state::Face) = (state, state.next)
-Base.done(m::PolygonMesh, state::Face) = false
-Base.done(m::PolygonMesh, state::Nothing) = true
-
-PolygonMesh() = PolygonMesh(Bounds(), nothing)
+PolygonMesh() = PolygonMesh(Bounds(), nil(Face))
 
 function PolygonMesh(path::String)
     # create a mesh representation from an STL file location 
@@ -147,7 +139,7 @@ function rotate!(mesh::PolygonMesh, angle::Float64, axis::Array{Float64}, throug
     axis = axis/norm(axis) # normalize axis
     a, b, c = through
     u, v, w = axis
-    for face in mesh
+    for face in mesh.faces
         for i = 1:3
             x, y, z = face.vertices[i]
             face.vertices[i] = rotate(x, y, z, a, b, c, u, v, w, angle)
@@ -165,13 +157,9 @@ function rotate(x, y, z, a, b, c, u, v, w, angle)
 end
 
 function push!(mesh::PolygonMesh, f::Face)
-    if mesh.faces == nothing
-        mesh.faces = f
-    else
-        f.next = mesh.faces
-        mesh.faces = f
-    end
+    mesh.faces = cons(f, mesh.faces)
 end
+
 ################################################################################
 #
 # Face
