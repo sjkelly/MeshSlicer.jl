@@ -4,6 +4,8 @@ using ImmutableArrays
 
 import Base.push!
 
+export Bounds, Face, PolygonMesh, LineSegment, PolygonSlice,
+       update!, rotate!, rotate
 
 type Bounds{T<:Number}
     xmax::T
@@ -40,12 +42,7 @@ end
 
 ################################################################################
 #
-# PolygonSlice:
-#   segments
-#   layer
-#
-# Outer Constructors:
-#   PolygonSlice(PolygonMesh, height::Float64
+# PolygonSlice
 #
 ################################################################################
 
@@ -68,16 +65,17 @@ end
 function PolygonSlice(mesh::PolygonMesh, heights::Array{Float64})
 
     slices = PolygonSlice[]
+
+    # Preinitialize the array
     for height in heights
         push!(slices, PolygonSlice(LineSegment[],height))
     end
 
-    segmentlist = LineSegment[]
-
     for face in mesh
+        zmin, zmax = extrema([face.vertices[j].e3 for j=1:3])
         i = 1
         for height in heights
-            if face.vertices[1].e3 <= height <= face.vertices[3].e3
+            if zmin <= height <= zmax
                 seg = LineSegment(face, height)
                 if seg != nothing
                     push!(slices[i].segments, seg)
@@ -92,13 +90,7 @@ end
 
 ################################################################################
 #
-# PolygonMesh:
-#   bounds
-#   faces
-#
-# outer constructors:
-#   PolygonMesh(m::IOStream)
-#       Create a mesh from an STL file IOStream
+# PolygonMesh
 #
 ################################################################################
 
@@ -110,10 +102,9 @@ Base.done(m::PolygonMesh, state::Nothing) = true
 PolygonMesh() = PolygonMesh(Bounds(), nothing)
 
 function PolygonMesh(path::String)
-    # create a mesh representation 
+    # create a mesh representation from an STL file location 
     file = open(path, "r")
 
-    bounds = Bounds()
     mesh = PolygonMesh()
 
     # Discover file type
@@ -133,11 +124,9 @@ function PolygonMesh(path::String)
         f = Face(file, s)
         if f != nothing
             push!(mesh, f)
-            update!(bounds, f)
+            update!(mesh.bounds, f)
         end
     end
-
-    mesh.bounds = bounds
 
     close(file)
     return mesh
@@ -174,20 +163,13 @@ function push!(mesh::PolygonMesh, f::Face)
 end
 ################################################################################
 #
-# Face:
-#   vertices : [[x, y, z], ...]
-#       An array of the vertices in the face
-#   normal : [x::Float64, y::Float64, x::Float64]
-#
-#
-# outer constructors:
-#   Face(f::IOStream, s::Symbol)
-#       Pulls a face from an STL file IOStream with type symbol
-#       Symbol can be :ascii_stl, :binary_stl
+# Face
 #
 ################################################################################
 
 function Face(m::IOStream, s::Symbol)
+    # Pulls a face from an STL file IOStream with type symbol
+    # Symbol can be :ascii_stl, :binary_stl
     #  facet normal -1 0 0
     #    outer loop
     #      vertex 0 0 10
@@ -224,16 +206,7 @@ end
 
 ################################################################################
 #
-# LineSegment:
-#   start : [x::Float64, y::Float64]
-#   finish : [x::Float64, y::Float64]
-#   slope :
-#       slope in slice plane, computed automatically by inner constructor
-#
-# outer constructors:
-#   LineSegment(f::Face, z::Number, normal)
-#   LineSegment(p0, p1, p2, z::Number, normal)
-#       p0, p1, p2 are expected to be Arrays of size 3 containing numbers
+# LineSegment
 #
 ################################################################################
 
@@ -277,17 +250,7 @@ end
 
 ################################################################################
 #
-# Bounds:
-#   xmax
-#   ymax
-#   zmax
-#   xmin
-#   ymin
-#   zmin
-#
-# Methods:
-#   update!(Bounds, Face)
-#       update the bounds against a face
+# Bounds
 #
 ################################################################################
 
@@ -296,6 +259,7 @@ function Bounds()
 end
 
 function update!(box::Bounds, face::Face)
+    # update the bounds against a face
     xmin, xmax = extrema([face.vertices[i].e1 for i = 1:3])
     ymin, ymax = extrema([face.vertices[i].e2 for i = 1:3])
     zmin, zmax = extrema([face.vertices[i].e3 for i = 1:3])
@@ -317,6 +281,5 @@ function (==)(a::Bounds, b::Bounds)
             a.zmin == b.zmin)
 end
 
-export Bounds, Face, PolygonMesh, LineSegment, PolygonSlice,
-       update!, rotate!, rotate
+
 end # module
