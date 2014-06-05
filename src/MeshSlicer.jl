@@ -51,9 +51,12 @@ function PolygonSlice(mesh::PolygonMesh, height::Float64)
     segmentlist = LineSegment[]
 
     for face in mesh
-        if face.vertices[1].e3 <= height <= face.vertices[3].e3
+        zmin, zmax = extrema([face.vertices[j].e3 for j=1:3])
+        if height > zmax
+            break
+        elseif zmin <= height
             seg = LineSegment(face, height)
-            if seg != nothing
+            if !is(seg, nothing)
                 push!(segmentlist, seg)
             end
         end
@@ -63,6 +66,8 @@ function PolygonSlice(mesh::PolygonMesh, height::Float64)
 end
 
 function PolygonSlice(mesh::PolygonMesh, heights::Array{Float64})
+    # slice a mesh at heights given in a
+    # monotonically increasing array of heights
 
     slices = PolygonSlice[]
 
@@ -75,9 +80,11 @@ function PolygonSlice(mesh::PolygonMesh, heights::Array{Float64})
         zmin, zmax = extrema([face.vertices[j].e3 for j=1:3])
         i = 1
         for height in heights
-            if zmin <= height <= zmax
+            if height > zmax
+                break
+            elseif zmin <= height
                 seg = LineSegment(face, height)
-                if seg != nothing
+                if !is(seg, nothing)
                     push!(slices[i].segments, seg)
                 end
             end
@@ -107,28 +114,32 @@ function PolygonMesh(path::String)
 
     mesh = PolygonMesh()
 
-    # Discover file type
-    if endswith(path, ".stl")
-        header = ascii(readbytes(file, 5))
-        if lowercase(header) == "solid"
-            s = :ascii_stl
-        else
-            readbytes(file, 75) # throw out header
-            s = :binary_stl
-            read(file, Uint32) # throwout triangle count
+    try
+        # Discover file type
+        if endswith(path, ".stl")
+            header = ascii(readbytes(file, 5))
+            if lowercase(header) == "solid"
+                s = :ascii_stl
+            else
+                readbytes(file, 75) # throw out header
+                s = :binary_stl
+                read(file, Uint32) # throwout triangle count
+            end
         end
+
+        # Construct mesh
+        while !eof(file)
+            f = Face(file, s)
+            if f != nothing
+                push!(mesh, f)
+                update!(mesh.bounds, f)
+            end
+        end
+
+    finally
+        close(file)
     end
 
-    # Construct mesh
-    while !eof(file)
-        f = Face(file, s)
-        if f != nothing
-            push!(mesh, f)
-            update!(mesh.bounds, f)
-        end
-    end
-
-    close(file)
     return mesh
 end
 
