@@ -33,7 +33,7 @@ type LineSegment
 end
 
 type Polygon
-    segments::LinkedList{LineSegments}
+    segments::LinkedList{LineSegment}
 end
 
 type MeshSlice
