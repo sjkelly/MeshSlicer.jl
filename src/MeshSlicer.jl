@@ -3,6 +3,7 @@ module MeshSlicer
 using ImmutableArrays
 using DataStructures
 import Base.push!
+import Base.isapprox
 
 export Bounds, Face, PolygonMesh, LineSegment, PolygonSlice,
        update!, rotate!, rotate
@@ -17,29 +18,30 @@ type Bounds{T<:Number}
 end
 
 type Face
-    vertices::Array{Vector3{Float64}}
+    vertidx::Vector3{Int64}
     normal::Vector3{Float64}
 end
 
 type PolygonMesh
-    bounds::Bounds
-    faces::LinkedList{Face}
+    bounds::Bounds{Float64}
+    vertices::Array{Vector3{Float64}}
+    faces::Array{Face}
 end
 
-type LineSegment
-    start::Vector2{Float64}
-    finish::Vector2{Float64}
-    normal::Vector3{Float64}
-end
+#type LineSegment
+#    start::Vector2{Float64}
+#    finish::Vector2{Float64}
+#    normal::Vector3{Float64}
+#end
 
-type Polygon
-    segments::LinkedList{LineSegments}
-end
+#type Polygon
+#    segments::LinkedList{LineSegments}
+#end
 
-type MeshSlice
-    polygons::Array{Polygon}
-    layer::Float64
-end
+#type MeshSlice
+#    polygons::Array{Polygon}
+#    layer::Float64
+#end
 
 ################################################################################
 #
@@ -47,54 +49,54 @@ end
 #
 ################################################################################
 
-function MeshSlice(mesh::PolygonMesh, height::Float64)
+#function MeshSlice(mesh::PolygonMesh, height::Float64)
 
-    segmentlist = LineSegment[]
+#    segmentlist = LineSegment[]
 
-    for face in mesh.faces
-        zmin, zmax = extrema([face.vertices[j].e3 for j=1:3])
-        if height > zmax
-            break
-        elseif zmin <= height
-            seg = LineSegment(face, height)
-            if !is(seg, nothing)
-                push!(segmentlist, seg)
-            end
-        end
-    end
+#    for face in mesh.faces
+#        zmin, zmax = extrema([face.vertices[j].e3 for j=1:3])
+#        if height > zmax
+#            break
+#        elseif zmin <= height
+#            seg = LineSegment(face, height)
+#            if !is(seg, nothing)
+#                push!(segmentlist, seg)
+#            end
+#        end
+#    end
 
-    return MeshSlice(segmentlist, height)
-end
+#    return MeshSlice(segmentlist, height)
+#end
 
-function MeshSlice(mesh::PolygonMesh, heights::Array{Float64})
-    # slice a mesh at heights given in a
-    # monotonically increasing array of heights
+#function MeshSlice(mesh::PolygonMesh, heights::Array{Float64})
+#    # slice a mesh at heights given in a
+#    # monotonically increasing array of heights
 
-    slices = PolygonSlice[]
+#    slices = PolygonSlice[]
 
-    # Preinitialize the array
-    for height in heights
-        push!(slices, PolygonSlice(LineSegment[],height))
-    end
+#    # Preinitialize the array
+#    for height in heights
+#        push!(slices, PolygonSlice(LineSegment[],height))
+#    end
 
-    for face in mesh.faces
-        zmin, zmax = extrema([face.vertices[j].e3 for j=1:3])
-        i = 1
-        for height in heights
-            if height > zmax
-                break
-            elseif zmin <= height
-                seg = LineSegment(face, height)
-                if !is(seg, nothing)
-                    push!(slices[i].segments, seg)
-                end
-            end
-            i = i + 1
-        end
-    end
+#    for face in mesh.faces
+#        zmin, zmax = extrema([face.vertices[j].e3 for j=1:3])
+#        i = 1
+#        for height in heights
+#            if height > zmax
+#                break
+#            elseif zmin <= height
+#                seg = LineSegment(face, height)
+#                if !is(seg, nothing)
+#                    push!(slices[i].segments, seg)
+#                end
+#            end
+#            i = i + 1
+#        end
+#    end
 
-    return slices
-end
+#    return slices
+#end
 
 
 ################################################################################
@@ -103,14 +105,14 @@ end
 #
 ################################################################################
 
-Polygon() = Polygon(nil(LineSegment))
+#Polygon() = Polygon(nil(LineSegment))
 
-function push!(poly::Polygon, f::LineSegment)
-    poly.segments = cons(f, poly.segments)
-end
+#function push!(poly::Polygon, f::LineSegment)
+#    poly.segments = cons(f, poly.segments)
+#end
 
-function Polygon(lines::Array{LineSegment})
-end
+#function Polygon(lines::Array{LineSegment})
+#end
 
 
 ################################################################################
@@ -119,7 +121,34 @@ end
 #
 ################################################################################
 
-PolygonMesh() = PolygonMesh(Bounds(), nil(Face))
+PolygonMesh() = PolygonMesh(Bounds(Float64), Vector3{Float64}[], Face[])
+
+function isapprox(a::Vector3, b::Vector3)
+    return (isapprox(a[1],b[1])
+           && isapprox(a[2],b[2])
+           && isapprox(a[3],b[3]))
+end
+
+function push!(poly::PolygonMesh, verts::Array, normal::Vector3)
+    vertidx = [0,0,0]
+    for i = 1:length(poly.vertices), j = 1:3
+        if isapprox(poly.vertices[i], verts[j])
+            vertidx[j] = i
+        end
+    end
+
+    for i = 1:3
+        if vertidx[i] == 0
+            push!(poly.vertices, verts[i])
+            vertidx[i] = length(poly.vertices)
+        end
+    end
+
+    update!(poly.bounds, [poly.vertices[i] for i in vertidx])
+    push!(poly.faces, Face(Vector3(vertidx), normal))
+
+end
+
 
 function PolygonMesh(path::String)
     # create a mesh representation from an STL file location 
@@ -132,27 +161,59 @@ function PolygonMesh(path::String)
         if endswith(path, ".stl")
             header = ascii(readbytes(file, 5))
             if lowercase(header) == "solid"
-                s = :ascii_stl
+                filetype = :ascii_stl
             else
                 readbytes(file, 75) # throw out header
-                s = :binary_stl
+                filetype = :binary_stl
                 read(file, Uint32) # throwout triangle count
             end
         end
 
         # Construct mesh
-        while !eof(file)
-            f = Face(file, s)
-            if f != nothing
-                push!(mesh, f)
-                update!(mesh.bounds, f)
-            end
-        end
+        mesh = PolygonMesh(file, filetype)
 
     finally
         close(file)
     end
 
+    return mesh
+end
+
+function PolygonMesh(m::IOStream, filetype::Symbol)
+    # Parses a file based on the given symbol and return a PolygonMesh
+    # Symbol can be :ascii_stl, :binary_stl
+    #  facet normal -1 0 0
+    #    outer loop
+    #      vertex 0 0 10
+    #      vertex 0 10 10
+    #      vertex 0 0 0
+    #    endloop
+    #  endfacet
+
+    mesh = PolygonMesh()
+
+    if filetype == :ascii_stl
+        while !eof(m)
+            line = split(lowercase(readline(m)))
+            if line[1] == "facet"
+                normal = Vector3(float64(line[3:5]))
+                readline(m) # Throw away outerloop
+                indices = [0,0,0]
+                push!(mesh, [Vector3(float64(split(readline(m))[2:4])) for i=1:3], normal)
+                readline(m) # throwout endloop
+                readline(m) # throwout endfacet
+            end
+        end
+
+    elseif filetype == :binary_stl
+        while !eof(m)
+            normal = Vector3([float64(read(m, Float32)) for i = 1:3])
+            push!(mesh, [Vector3([float64(read(m, Float32)) for i = 1:3]) for j = 1:3], normal)
+            read(m, Uint16) # throwout attribute
+        end
+    end
+
+    # If we can't find anything, return nothing
     return mesh
 end
 
@@ -177,50 +238,14 @@ function rotate(x, y, z, a, b, c, u, v, w, angle)
 
 end
 
-function push!(mesh::PolygonMesh, f::Face)
-    mesh.faces = cons(f, mesh.faces)
-end
-
 ################################################################################
 #
 # Face
 #
 ################################################################################
 
-function Face(m::IOStream, s::Symbol)
-    # Pulls a face from an STL file IOStream with type symbol
-    # Symbol can be :ascii_stl, :binary_stl
-    #  facet normal -1 0 0
-    #    outer loop
-    #      vertex 0 0 10
-    #      vertex 0 10 10
-    #      vertex 0 0 0
-    #    endloop
-    #  endfacet
-    if s == :ascii_stl
-        line = split(lowercase(readline(m)))
-        if line[1] == "facet"
-            normal = Vector3(float64(line[3:5]))
-            readline(m) # Throw away outerloop
-            vertices = [Vector3(float64(split(readline(m))[2:4])) for i = 1:3]
-            readline(m) # throwout endloop
-            readline(m) # throwout endfacet
-            return Face(vertices, normal)
-        end
-
-    elseif s == :binary_stl
-        normal = Vector3([float64(read(m, Float32)) for i = 1:3])
-        vertices = [Vector3([float64(read(m, Float32)) for i = 1:3]) for j = 1:3]
-        read(m, Uint16) # throwout attribute
-        return Face(vertices, normal)
-    end
-
-    # If we can't find anything, return nothing
-    return nothing
-end
-
 function (==)(a::Face, b::Face)
-    return (a.vertices == b.vertices &&
+    return (a.vertidx == b.vertidx &&
             a.normal == b.normal)
 end
 
@@ -230,43 +255,43 @@ end
 #
 ################################################################################
 
-function LineSegment(f::Face, z::Float64)
+#function LineSegment(f::Face, z::Float64)
 
-    p0 = f.vertices[1]
-    p1 = f.vertices[2]
-    p2 = f.vertices[3]
+#    p0 = f.vertices[1]
+#    p1 = f.vertices[2]
+#    p2 = f.vertices[3]
 
-    if p0.e3 < z && p1.e3 >= z && p2.e3 >= z
-        return LineSegment(p0, p2, p1, z, f.normal)
-    elseif p0.e3 > z && p1.e3 < z && p2.e3 < z
-        return LineSegment(p0, p1, p2, z, f.normal)
-    elseif p1.e3 < z && p0.e3 >= z && p2.e3 >= z
-        return LineSegment(p1, p0, p2, z, f.normal)
-    elseif p1.e3 > z && p0.e3 < z && p2.e3 < z
-        return LineSegment(p1, p2, p0, z, f.normal)
-    elseif p2.e3 < z && p1.e3 >= z && p0.e3 >= z
-        return LineSegment(p2, p1, p0, z, f.normal)
-    elseif p2.e3 > z && p1.e3 < z && p0.e3 < z
-        return LineSegment(p2, p0, p1, z, f.normal)
-    else
-        return nothing
-    end
+#    if p0.e3 < z && p1.e3 >= z && p2.e3 >= z
+#        return LineSegment(p0, p2, p1, z, f.normal)
+#    elseif p0.e3 > z && p1.e3 < z && p2.e3 < z
+#        return LineSegment(p0, p1, p2, z, f.normal)
+#    elseif p1.e3 < z && p0.e3 >= z && p2.e3 >= z
+#        return LineSegment(p1, p0, p2, z, f.normal)
+#    elseif p1.e3 > z && p0.e3 < z && p2.e3 < z
+#        return LineSegment(p1, p2, p0, z, f.normal)
+#    elseif p2.e3 < z && p1.e3 >= z && p0.e3 >= z
+#        return LineSegment(p2, p1, p0, z, f.normal)
+#    elseif p2.e3 > z && p1.e3 < z && p0.e3 < z
+#        return LineSegment(p2, p0, p1, z, f.normal)
+#    else
+#        return nothing
+#    end
 
-end
+#end
 
-function LineSegment(p0::Vector3, p1::Vector3, p2::Vector3, z::Float64, normal::Vector3)
-    start = Vector2(p0.e1 + (p1.e1 - p0.e1) * (z - p0.e3) / (p1.e3 - p0.e3),
-                    p0.e2 + (p1.e2 - p0.e2) * (z - p0.e3) / (p1.e3 - p0.e3))
-    finish = Vector2(p0.e1 + (p2.e1 - p0.e1) * (z - p0.e3) / (p2.e3 - p0.e3),
-                     p0.e2 + (p2.e2 - p0.e2) * (z - p0.e3) / (p2.e3 - p0.e3))
-    return LineSegment(start, finish, normal);
-end
+#function LineSegment(p0::Vector3, p1::Vector3, p2::Vector3, z::Float64, normal::Vector3)
+#    start = Vector2(p0.e1 + (p1.e1 - p0.e1) * (z - p0.e3) / (p1.e3 - p0.e3),
+#                    p0.e2 + (p1.e2 - p0.e2) * (z - p0.e3) / (p1.e3 - p0.e3))
+#    finish = Vector2(p0.e1 + (p2.e1 - p0.e1) * (z - p0.e3) / (p2.e3 - p0.e3),
+#                     p0.e2 + (p2.e2 - p0.e2) * (z - p0.e3) / (p2.e3 - p0.e3))
+#    return LineSegment(start, finish, normal);
+#end
 
 
-function (==)(a::LineSegment, b::LineSegment)
-    return (a.start == b.start &&
-            a.finish == b.finish)
-end
+#function (==)(a::LineSegment, b::LineSegment)
+#    return (a.start == b.start &&
+#            a.finish == b.finish)
+#end
 
 ################################################################################
 #
@@ -274,15 +299,15 @@ end
 #
 ################################################################################
 
-function Bounds()
-    return Bounds{Float64}(-Inf,-Inf,-Inf,Inf,Inf,Inf)
+function Bounds(T)
+    return Bounds{T}(-Inf,-Inf,-Inf,Inf,Inf,Inf)
 end
 
-function update!(box::Bounds, face::Face)
+function update!(box::Bounds, verts::Array)
     # update the bounds against a face
-    xmin, xmax = extrema([face.vertices[i].e1 for i = 1:3])
-    ymin, ymax = extrema([face.vertices[i].e2 for i = 1:3])
-    zmin, zmax = extrema([face.vertices[i].e3 for i = 1:3])
+    xmin, xmax = extrema([verts[i].e1 for i = 1:3])
+    ymin, ymax = extrema([verts[i].e2 for i = 1:3])
+    zmin, zmax = extrema([verts[i].e3 for i = 1:3])
 
     box.xmin = min(xmin, box.xmin)
     box.ymin = min(ymin, box.ymin)

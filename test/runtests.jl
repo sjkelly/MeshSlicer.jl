@@ -9,18 +9,18 @@ test_handler(r::Test.Success) = println("Test success: $(r.expr)")
 test_handler(r::Test.Failure) = error("Test fail: $(r.expr)")
 test_handler(r::Test.Error) = rethrow(r)
 
-# getmesh/getface test
+
 println("Testing PolygonMesh...")
 
 # get the first face from cube.stl
-testFace = Face(Vector3[Vector3(10.0,0.0,10.0),
-                      Vector3(10.0,0.0,0.0),
-                      Vector3(10.0,10.0,10.0)],
-                      Vector3(1.0,0.0,0.0))
+#testFace = Face(Vector3[Vector3(10.0,0.0,10.0),
+#                      Vector3(10.0,0.0,0.0),
+#                      Vector3(10.0,10.0,10.0)],
+#                      Vector3(1.0,0.0,0.0))
 
-testBounds = Bounds{Float64}(10.0,10.0,10.0,0,0,0)
+testBounds = Bounds{Float64}(10.0,10.0,10.0,0.0,0.0,0.0)
 
-resultmesh = PolygonMesh("./data/cube.stl")
+@time resultmesh = PolygonMesh("./data/cube_binary.stl")
 
 println(resultmesh)
 Test.with_handler(test_handler) do
