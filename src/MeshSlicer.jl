@@ -32,18 +32,22 @@ type LineSegment
     normal::Vector3{Float64}
 end
 
-type PolygonSlice
-    segments::Array{LineSegment}
+type Polygon
+    segments::LinkedList{LineSegments}
+end
+
+type MeshSlice
+    polygons::Array{Polygon}
     layer::Float64
 end
 
 ################################################################################
 #
-# PolygonSlice
+# MeshSlice
 #
 ################################################################################
 
-function PolygonSlice(mesh::PolygonMesh, height::Float64)
+function MeshSlice(mesh::PolygonMesh, height::Float64)
 
     segmentlist = LineSegment[]
 
@@ -59,10 +63,10 @@ function PolygonSlice(mesh::PolygonMesh, height::Float64)
         end
     end
 
-    return PolygonSlice(segmentlist, height)
+    return MeshSlice(segmentlist, height)
 end
 
-function PolygonSlice(mesh::PolygonMesh, heights::Array{Float64})
+function MeshSlice(mesh::PolygonMesh, heights::Array{Float64})
     # slice a mesh at heights given in a
     # monotonically increasing array of heights
 
@@ -91,6 +95,23 @@ function PolygonSlice(mesh::PolygonMesh, heights::Array{Float64})
 
     return slices
 end
+
+
+################################################################################
+#
+# Polygon
+#
+################################################################################
+
+Polygon() = Polygon(nil(LineSegment))
+
+function push!(poly::Polygon, f::LineSegment)
+    poly.segments = cons(f, poly.segments)
+end
+
+function Polygon(lines::Array{LineSegment})
+end
+
 
 ################################################################################
 #
