@@ -1,3 +1,5 @@
+#! /usr/bin/env julia
+
 using MeshSlicer
 using Base.Test
 using ImmutableArrays
