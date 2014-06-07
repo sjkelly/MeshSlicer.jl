@@ -1,0 +1,3 @@
+[submodule "doc/jocco"]
+	path = doc/jocco
+	url = git@github.com:sjkelly/jocco.git
