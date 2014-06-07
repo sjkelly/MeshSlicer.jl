@@ -70,7 +70,7 @@ function MeshSlice(mesh::PolygonMesh, heights::Array{Float64})
     # slice a mesh at heights given in a
     # monotonically increasing array of heights
 
-    slices = PolygonSlice[]
+    slices = MeshSlice[]
 
     # Preinitialize the array
     for height in heights
@@ -128,24 +128,37 @@ function PolygonMesh(path::String)
     mesh = PolygonMesh()
 
     try
-        # Discover file type
+        # Discover file type and construct mesh
+        # STL
         if endswith(path, ".stl")
             header = ascii(readbytes(file, 5))
+
+            # ASCII STL
+            # https://en.wikipedia.org/wiki/STL_%28file_format%29#ASCII_STL
             if lowercase(header) == "solid"
-                s = :ascii_stl
+                while !eof(file)
+                    line = split(lowercase(readline(file)))
+                    if line[1] == "facet"
+                        normal = Vector3(float64(line[3:5]))
+                        readline(file) # Throw away outerloop
+                        vertices = [Vector3(float64(split(readline(file))[2:4])) for i = 1:3]
+                        readline(file) # throwout endloop
+                        readline(file) # throwout endfacet
+                        push!(mesh, Face(vertices,normal))
+                    end
+                end
+
+            # Binary STL
+            # https://en.wikipedia.org/wiki/STL_%28file_format%29#Binary_STL
             else
                 readbytes(file, 75) # throw out header
-                s = :binary_stl
                 read(file, Uint32) # throwout triangle count
-            end
-        end
-
-        # Construct mesh
-        while !eof(file)
-            f = Face(file, s)
-            if f != nothing
-                push!(mesh, f)
-                update!(mesh.bounds, f)
+                while !eof(file)
+                    normal = Vector3([float64(read(file, Float32)) for i = 1:3])
+                    vertices = [Vector3([float64(read(file, Float32)) for i = 1:3]) for j = 1:3]
+                    skip(file, 2) # throwout 16bit attribute
+                    push!(mesh, Face(vertices,normal))
+                end
             end
         end
 
@@ -161,10 +174,10 @@ function rotate!(mesh::PolygonMesh, angle::Float64, axis::Array{Float64}, throug
     a, b, c = through
     u, v, w = axis
     for face in mesh.faces
-        for i = 1:3
-            x, y, z = face.vertices[i]
-            face.vertices[i] = rotate(x, y, z, a, b, c, u, v, w, angle)
-        end
+        face.vertices = [begin
+                            x, y, z = face.vertices[i];
+                            rotate(x, y, z, a, b, c, u, v, w, angle)
+                         end for i = 1:3]
         update!(mesh.bounds, face)
     end
 end
@@ -179,49 +192,7 @@ end
 
 function push!(mesh::PolygonMesh, f::Face)
     mesh.faces = cons(f, mesh.faces)
-end
-
-################################################################################
-#
-# Face
-#
-################################################################################
-
-function Face(m::IOStream, s::Symbol)
-    # Pulls a face from an STL file IOStream with type symbol
-    # Symbol can be :ascii_stl, :binary_stl
-    #  facet normal -1 0 0
-    #    outer loop
-    #      vertex 0 0 10
-    #      vertex 0 10 10
-    #      vertex 0 0 0
-    #    endloop
-    #  endfacet
-    if s == :ascii_stl
-        line = split(lowercase(readline(m)))
-        if line[1] == "facet"
-            normal = Vector3(float64(line[3:5]))
-            readline(m) # Throw away outerloop
-            vertices = [Vector3(float64(split(readline(m))[2:4])) for i = 1:3]
-            readline(m) # throwout endloop
-            readline(m) # throwout endfacet
-            return Face(vertices, normal)
-        end
-
-    elseif s == :binary_stl
-        normal = Vector3([float64(read(m, Float32)) for i = 1:3])
-        vertices = [Vector3([float64(read(m, Float32)) for i = 1:3]) for j = 1:3]
-        read(m, Uint16) # throwout attribute
-        return Face(vertices, normal)
-    end
-
-    # If we can't find anything, return nothing
-    return nothing
-end
-
-function (==)(a::Face, b::Face)
-    return (a.vertices == b.vertices &&
-            a.normal == b.normal)
+    update!(mesh.bounds, f)
 end
 
 ################################################################################
@@ -274,9 +245,7 @@ end
 #
 ################################################################################
 
-function Bounds()
-    return Bounds{Float64}(-Inf,-Inf,-Inf,Inf,Inf,Inf)
-end
+Bounds() = Bounds{Float64}(-Inf,-Inf,-Inf,Inf,Inf,Inf)
 
 function update!(box::Bounds, face::Face)
     # update the bounds against a face
