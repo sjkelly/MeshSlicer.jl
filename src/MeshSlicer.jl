@@ -56,10 +56,7 @@ function MeshSlice(mesh::PolygonMesh, height::Float64)
         if height > zmax
             break
         elseif zmin <= height
-            seg = LineSegment(face, height)
-            if !is(seg, nothing)
-                push!(segmentlist, seg)
-            end
+            push!(segmentlist, LineSegment(face, height))
         end
     end
 
@@ -84,10 +81,7 @@ function MeshSlice(mesh::PolygonMesh, heights::Array{Float64})
             if height > zmax
                 break
             elseif zmin <= height
-                seg = LineSegment(face, height)
-                if !is(seg, nothing)
-                    push!(slices[i].segments, seg)
-                end
+                push!(slices[i].segments, LineSegment(face, height))
             end
             i = i + 1
         end
@@ -219,8 +213,6 @@ function LineSegment(f::Face, z::Float64)
         return LineSegment(p2, p1, p0, z, f.normal)
     elseif p2.e3 > z && p1.e3 < z && p0.e3 < z
         return LineSegment(p2, p0, p1, z, f.normal)
-    else
-        return nothing
     end
 
 end
