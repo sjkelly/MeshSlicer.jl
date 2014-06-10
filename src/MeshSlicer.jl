@@ -1,3 +1,6 @@
+# [https://github.com/sjkelly/MeshSlicer.jl](https://github.com/sjkelly/MeshSlicer.jl)
+# ![](../img/sliced_cylinder.png)
+
 module MeshSlicer
 
 using ImmutableArrays
@@ -41,12 +44,18 @@ type MeshSlice
     layer::Float64
 end
 
-################################################################################
-#
-# MeshSlice
-#
-################################################################################
 
+# ##MeshSlice(*mesh::PolygonMesh, height::Float64*)
+#
+# Create a MeshSlice from a PolygonMesh at a given height.
+#
+# ----------------------------------------------------------------------------
+# Parameters:
+# -------------------- --------------------------------------------------
+# `mesh`               The `PolygonMesh` to slice.
+#
+# `height`             The height at which to slice.
+# ----------------------------------------------------------------------------
 function MeshSlice(mesh::PolygonMesh, height::Float64)
 
     segmentlist = LineSegment[]
@@ -63,13 +72,28 @@ function MeshSlice(mesh::PolygonMesh, height::Float64)
     return MeshSlice(segmentlist, height)
 end
 
+# ##MeshSlice(*mesh::PolygonMesh, heights::Array{Float64}*)
+#
+# Create an array of MeshSlice at heights given by a
+# monotonically increasing array of `Float64`.
+#
+# ----------------------------------------------------------------------------
+# Parameters:
+# -------------------- --------------------------------------------------
+# `mesh`               The `PolygonMesh` to slice.
+#
+# `heights`            An array of heights at which to slice.
+# ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
+# Returns:
+# -------------------- --------------------------------------------------
+# `Array{MeshSlice}`   An `Array` of `MeshSlice` at the requested height.
+# ----------------------------------------------------------------------------
 function MeshSlice(mesh::PolygonMesh, heights::Array{Float64})
-    # slice a mesh at heights given in a
-    # monotonically increasing array of heights
 
     slices = MeshSlice[]
 
-    # Preinitialize the array
+    #Preinitialize the array
     for height in heights
         push!(slices, PolygonSlice(LineSegment[],height))
     end
@@ -90,45 +114,84 @@ function MeshSlice(mesh::PolygonMesh, heights::Array{Float64})
     return slices
 end
 
-
-################################################################################
+# ##Polygon()
 #
-# Polygon
-#
-################################################################################
-
+# ----------------------------------------------------------------------------
+# Returns:
+# -------------------- --------------------------------------------------
+# `Polygon`            An empty `Polygon`.
+# ----------------------------------------------------------------------------
 Polygon() = Polygon(nil(LineSegment))
 
-function push!(poly::Polygon, f::LineSegment)
-    poly.segments = cons(f, poly.segments)
+# ##push!(*poly::Polygon, f::LineSegment*)
+#
+# Add a `LineSegment` to a `Polygon` object.
+#
+# ----------------------------------------------------------------------------
+# Parameters:
+# -------------------- --------------------------------------------------
+# `poly`               The `Polygon` to mutate.
+#
+# `line`               The `LineSegment` to add to poly.
+# ----------------------------------------------------------------------------
+function push!(poly::Polygon, line::LineSegment)
+    poly.segments = cons(line, poly.segments)
 end
 
+# ##Polygon(*lines::Array{LineSegment}*)
+#
+# Construct an `Array` of `Polygon` from an `Array` of `LineSegments`.
+#
+# ----------------------------------------------------------------------------
+# Parameters:
+# -------------------- --------------------------------------------------
+# `lines`              An unorder `Array` of `LineSegment`.
+# ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
+# Returns:
+# -------------------- --------------------------------------------------
+# `Array{Polygon}`     An `Array` of `Polygon`.
+# ----------------------------------------------------------------------------
 function Polygon(lines::Array{LineSegment})
 end
 
-
-################################################################################
+# ##PolygonMesh()
 #
-# PolygonMesh
-#
-################################################################################
-
+# ----------------------------------------------------------------------------
+# Returns:
+# -------------------- --------------------------------------------------
+# `PolygonMesh`        An empty `PolygonMesh`.
+# ----------------------------------------------------------------------------
 PolygonMesh() = PolygonMesh(Bounds(), nil(Face))
 
+# ##PolygonMesh(*path::String*)
+#
+# ----------------------------------------------------------------------------
+# Parameters:
+# -------------------- --------------------------------------------------
+# `mesh`               The `PolygonMesh` to slice.
+#
+# `height`             The height at which to slice.
+# ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
+# Returns:
+# -------------------- --------------------------------------------------
+# `MeshSlice`          A MeshSlice at the requested height.
+# ----------------------------------------------------------------------------
 function PolygonMesh(path::String)
-    # create a mesh representation from an STL file location 
+
     file = open(path, "r")
 
     mesh = PolygonMesh()
 
     try
-        # Discover file type and construct mesh
-        # STL
+        #Discover file type and construct mesh
+        #STL
         if endswith(path, ".stl")
             header = ascii(readbytes(file, 5))
 
-            # ASCII STL
-            # https://en.wikipedia.org/wiki/STL_%28file_format%29#ASCII_STL
+            #ASCII STL
+            #https://en.wikipedia.org/wiki/STL_%28file_format%29#ASCII_STL
             if lowercase(header) == "solid"
                 while !eof(file)
                     line = split(lowercase(readline(file)))
@@ -142,8 +205,8 @@ function PolygonMesh(path::String)
                     end
                 end
 
-            # Binary STL
-            # https://en.wikipedia.org/wiki/STL_%28file_format%29#Binary_STL
+            #Binary STL
+            #https://en.wikipedia.org/wiki/STL_%28file_format%29#Binary_STL
             else
                 readbytes(file, 75) # throw out header
                 read(file, Uint32) # throwout triangle count
@@ -163,6 +226,21 @@ function PolygonMesh(path::String)
     return mesh
 end
 
+# ##rotate!(*mesh::PolygonMesh, angle::Float64, axis::Array{Float64}*, through::Array{Float64})
+#
+# Rotates a `PolygonMesh` around an arbitrary axis.
+#
+# ----------------------------------------------------------------------------
+# Parameters:
+# -------------------- --------------------------------------------------
+# `mesh`               The `PolygonMesh` to rotate.
+#
+# `angle`              The rotation angle in radians.
+#
+# `axis`               The axis  to rotate around.
+#
+# `through`            The `[x, y, z]` point the `axis` passes through.
+# ----------------------------------------------------------------------------
 function rotate!(mesh::PolygonMesh, angle::Float64, axis::Array{Float64}, through::Array{Float64})
     axis = axis/norm(axis) # normalize axis
     a, b, c = through
@@ -176,25 +254,63 @@ function rotate!(mesh::PolygonMesh, angle::Float64, axis::Array{Float64}, throug
     end
 end
 
+# ##rotate(*x, y, z, a, b, c, u, v, w, angle*)
+#
+# Create a MeshSlice from a PolygonMesh at a given height.
+# See: [http://inside.mines.edu/~gmurray/ArbitraryAxisRotation/#x1-10011](http://inside.mines.edu/~gmurray/ArbitraryAxisRotation/#x1-10011)
+#
+# ----------------------------------------------------------------------------
+# Parameters:
+# -------------------- --------------------------------------------------
+# `x, y, z`            The position to rotate.
+#
+# `u, v, w`            The axis to rotate around.
+#
+# `a, b, c`            The point to rotate through.
+# ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
+# Returns:
+# -------------------- --------------------------------------------------
+# `Vector3`            The rotation of `x, y, z`.
+# ----------------------------------------------------------------------------
 function rotate(x, y, z, a, b, c, u, v, w, angle)
-    # See: http://inside.mines.edu/~gmurray/ArbitraryAxisRotation/#x1-10011
     return Vector3((a*(v^2+w^2)-u*(b*v+c*w-u*x-v*y-w*z))*(1-cos(angle))+x*cos(angle)+(-c*v+b*w-w*y+v*z)*sin(angle),
             (b*(u^2+w^2)-v*(a*u+c*w-u*x-v*y-w*z))*(1-cos(angle))+y*cos(angle)+(c*u-a*w+w*x-u*z)*sin(angle),
             (c*(u^2+v^2)-w*(a*u+b*v-u*x-v*y-w*z))*(1-cos(angle))+z*cos(angle)+(-b*u+a*v-v*x+u*y)*sin(angle))
 
 end
 
+# ##push!(*mesh::PolygonMesh, f::Face*)
+#
+# Add a `Face` to a `PolygonMesh` object.
+#
+# ----------------------------------------------------------------------------
+# Parameters:
+# -------------------- --------------------------------------------------
+# `mesh`               The `PolygonMesh` to mutate.
+#
+# `f`                  The `Face` to add to mesh.
+# ----------------------------------------------------------------------------
 function push!(mesh::PolygonMesh, f::Face)
     mesh.faces = cons(f, mesh.faces)
     update!(mesh.bounds, f)
 end
 
-################################################################################
+# ##LineSegment(*f::Face, z::Float64*)
 #
-# LineSegment
+# Get a `LineSegment` in the X-Y plane from a `Face` at a requested height.
 #
-################################################################################
-
+# ----------------------------------------------------------------------------
+# Parameters:
+# -------------------- --------------------------------------------------
+# `f`                  The `Face` to slice.
+#
+# `z`                  The height to slice the face.
+# ----------------------------------------------------------------------------
+# Returns:
+# -------------------- --------------------------------------------------
+# `LineSegment`        A `LineSegment` at the requested height in the X-Y plane.
+# ----------------------------------------------------------------------------
 function LineSegment(f::Face, z::Float64)
 
     p0 = f.vertices[1]
@@ -217,6 +333,27 @@ function LineSegment(f::Face, z::Float64)
 
 end
 
+# ##LineSegment(*p0::Vector3, p1::Vector3, p2::Vector3, z::Float64, normal::Vector3*)
+#
+# Get a `LineSegment` at `z` generated by the rays $\overline{p0p1}$ and $\overline{p0p2}$.
+#
+# ----------------------------------------------------------------------------
+# Parameters:
+# -------------------- --------------------------------------------------
+# `p0`                 The base point.
+#
+# `p1`                 A point such that `z` is between `p0[3]` and `p1[3]`.
+#
+# `p2`                 A point such that `z` is between `p0[3]` and `p2[3]`.
+#
+# `z`                  The height to slice the rays $\overline{p0p1}$ and $\overline{p0p2}$.
+#
+# `normal`             The normal of the face, retained for insetting and offsetting.
+# ----------------------------------------------------------------------------
+# Returns:
+# -------------------- --------------------------------------------------
+# `LineSegment`        A `LineSegment` at the requested height in the X-Y plane.
+# ----------------------------------------------------------------------------
 function LineSegment(p0::Vector3, p1::Vector3, p2::Vector3, z::Float64, normal::Vector3)
     start = Vector2(p0.e1 + (p1.e1 - p0.e1) * (z - p0.e3) / (p1.e3 - p0.e3),
                     p0.e2 + (p1.e2 - p0.e2) * (z - p0.e3) / (p1.e3 - p0.e3))
@@ -225,22 +362,38 @@ function LineSegment(p0::Vector3, p1::Vector3, p2::Vector3, z::Float64, normal::
     return LineSegment(start, finish, normal);
 end
 
-
-function (==)(a::LineSegment, b::LineSegment)
+# ##==(a::LineSegment, b::LineSegment)
+#
+# ----------------------------------------------------------------------------
+# Returns:
+# -------------------- --------------------------------------------------
+# `Bool`               Whether two `LineSegment`s are equal.
+# ----------------------------------------------------------------------------
+function ==(a::LineSegment, b::LineSegment)
     return (a.start == b.start &&
             a.finish == b.finish)
 end
 
-################################################################################
+# ##Bounds()
 #
-# Bounds
-#
-################################################################################
-
+# ----------------------------------------------------------------------------
+# Returns:
+# -------------------- --------------------------------------------------
+# `Bound`              An empty `Bounds` of type `Float64`.
+# ----------------------------------------------------------------------------
 Bounds() = Bounds{Float64}(-Inf,-Inf,-Inf,Inf,Inf,Inf)
 
+# ##update!(*box::Bounds, face::Face*)
+#
+# ----------------------------------------------------------------------------
+# Parameters:
+# -------------------- --------------------------------------------------
+# `box`                The `Bounds` to update.
+#
+# `face`               The `Face` to update the bounds against.
+# ----------------------------------------------------------------------------
 function update!(box::Bounds, face::Face)
-    # update the bounds against a face
+    #update the bounds against a face
     xmin, xmax = extrema([face.vertices[i].e1 for i = 1:3])
     ymin, ymax = extrema([face.vertices[i].e2 for i = 1:3])
     zmin, zmax = extrema([face.vertices[i].e3 for i = 1:3])
@@ -253,7 +406,14 @@ function update!(box::Bounds, face::Face)
     box.zmax = max(zmax, box.zmax)
 end
 
-function (==)(a::Bounds, b::Bounds)
+# ##==(*a::Bounds, b::Bounds*)
+#
+# ----------------------------------------------------------------------------
+# Returns:
+# -------------------- --------------------------------------------------
+# `Bool`               Whether two `Bounds` are equal.
+# ----------------------------------------------------------------------------
+function ==(a::Bounds, b::Bounds)
     return (a.xmax == b.xmax &&
             a.ymax == b.ymax &&
             a.zmax == b.zmax &&
