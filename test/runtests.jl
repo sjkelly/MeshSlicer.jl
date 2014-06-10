@@ -61,6 +61,13 @@ Test.with_handler(test_handler) do
 end
 
 
+# Test patio detection
+println("Tesing patio detection...")
+Test.with_handler(test_handler) do
+    @test resultmesh2.patios == [3.0, 9.0]
+    @test resultmesh.patios == [0.0, 10.0]
+end
+
 # Test LineSegment
 testpoint1 = Vector3[[0.0,0.0,0.0],[0.0,1.0,0.0],[0.0,1.0,1.0]]
 normal = Vector3(1.0, 1.0, 1.0)
