@@ -27,6 +27,7 @@ end
 type PolygonMesh
     bounds::Bounds
     faces::LinkedList{Face}
+    patios::Array{Float64}
 end
 
 type LineSegment
@@ -162,7 +163,7 @@ end
 # -------------------- --------------------------------------------------
 # `PolygonMesh`        An empty `PolygonMesh`.
 # ----------------------------------------------------------------------------
-PolygonMesh() = PolygonMesh(Bounds(), nil(Face))
+PolygonMesh() = PolygonMesh(Bounds(), nil(Face), Float64[])
 
 # ##PolygonMesh(*path::String*)
 #
@@ -292,6 +293,10 @@ end
 # `f`                  The `Face` to add to mesh.
 # ----------------------------------------------------------------------------
 function push!(mesh::PolygonMesh, f::Face)
+    if abs(f.normal.e3) == 1 && !in(f.vertices[1].e3, mesh.patios)
+        push!(mesh.patios,f.vertices[1].e3)
+        sort!(mesh.patios) #Keep monotonic
+    end
     mesh.faces = cons(f, mesh.faces)
     update!(mesh.bounds, f)
 end
@@ -362,7 +367,7 @@ function LineSegment(p0::Vector3, p1::Vector3, p2::Vector3, z::Float64, normal::
     return LineSegment(start, finish, normal);
 end
 
-# ##==(a::LineSegment, b::LineSegment)
+# ##==(*a::LineSegment, b::LineSegment*)
 #
 # ----------------------------------------------------------------------------
 # Returns:
