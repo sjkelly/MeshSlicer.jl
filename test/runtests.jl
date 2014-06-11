@@ -25,8 +25,8 @@ testBounds = Bounds{Float64}(10.0,10.0,10.0,0,0,0)
 resultmesh = PolygonMesh("./data/cube.stl")
 
 Test.with_handler(test_handler) do
-    @test resultmesh.faces.head.vertices == testFace.vertices
-    @test resultmesh.faces.head.normal == testFace.normal
+    @test resultmesh.faces[end].vertices == testFace.vertices
+    @test resultmesh.faces[end].normal == testFace.normal
 end
 
 println("Testing Bounds...")
