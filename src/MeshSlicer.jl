@@ -4,7 +4,6 @@
 module MeshSlicer
 
 using ImmutableArrays
-using DataStructures
 import Base.push!
 
 export Bounds, Face, PolygonMesh, LineSegment,
@@ -26,7 +25,7 @@ end
 
 type PolygonMesh
     bounds::Bounds
-    faces::LinkedList{Face}
+    faces::Array{Face}
     patios::Array{Float64}
 end
 
@@ -37,7 +36,7 @@ type LineSegment
 end
 
 type Polygon
-    segments::LinkedList{LineSegment}
+    segments::Array{LineSegment}
 end
 
 type MeshSlice
@@ -91,7 +90,7 @@ end
 # `Array{MeshSlice}`   An `Array` of `MeshSlice` at the requested height.
 # ----------------------------------------------------------------------------
 function MeshSlice(mesh::PolygonMesh, heights::Array{Float64})
-
+    eps = 0.0001
     slices = [LineSegment[] for i = 1:length(heights)]
 
     for face in mesh.faces
@@ -113,7 +112,7 @@ function MeshSlice(mesh::PolygonMesh, heights::Array{Float64})
     polys = MeshSlice[]
 
     for i = 1:length(heights)
-        push!(polys, MeshSlice(Polygon(slices[i]), heights[i]))
+        push!(polys, MeshSlice(Polygon(slices[i], eps), heights[i]))
     end
 
     return polys
@@ -126,22 +125,7 @@ end
 # -------------------- --------------------------------------------------
 # `Polygon`            An empty `Polygon`.
 # ----------------------------------------------------------------------------
-Polygon() = Polygon(nil(LineSegment))
-
-# ##push!(*poly::Polygon, f::LineSegment*)
-#
-# Add a `LineSegment` to a `Polygon` object.
-#
-# ----------------------------------------------------------------------------
-# Parameters:
-# -------------------- --------------------------------------------------
-# `poly`               The `Polygon` to mutate.
-#
-# `line`               The `LineSegment` to add to poly.
-# ----------------------------------------------------------------------------
-function push!(poly::Polygon, line::LineSegment)
-    poly.segments = cons(line, poly.segments)
-end
+Polygon() = Polygon(LineSegment[])
 
 # ##Polygon(*lines::Array{LineSegment}*)
 #
@@ -157,8 +141,7 @@ end
 # -------------------- --------------------------------------------------
 # `Array{Polygon}`     An `Array` of `Polygon`.
 # ----------------------------------------------------------------------------
-function Polygon(lines::Array{LineSegment})
-    eps = 0.0001
+function Polygon(lines::Array{LineSegment}, eps::Real)
     n = length(lines)
     if n == 0
         return [Polygon()]
@@ -172,7 +155,7 @@ function Polygon(lines::Array{LineSegment})
     while true
         #Start new polygon with seg
         poly = Polygon()
-        push!(poly, lines[seg])
+        push!(poly.segments, lines[seg])
         couldpair = true
         idx = seg
 
@@ -181,7 +164,7 @@ function Polygon(lines::Array{LineSegment})
             for i = 1:n
                 if !paired[i]
                     if norm(lines[seg].finish - lines[i].start) <= eps
-                        push!(poly, lines[i])
+                        push!(poly.segments, lines[i])
                         paired[i] = true
                         seg = i
                     end
@@ -213,7 +196,7 @@ end
 # -------------------- --------------------------------------------------
 # `PolygonMesh`        An empty `PolygonMesh`.
 # ----------------------------------------------------------------------------
-PolygonMesh() = PolygonMesh(Bounds(), nil(Face), Float64[])
+PolygonMesh() = PolygonMesh(Bounds(), Face[], Float64[])
 
 # ##PolygonMesh(*path::String*)
 #
@@ -347,7 +330,7 @@ function push!(mesh::PolygonMesh, f::Face)
         push!(mesh.patios,f.vertices[1].e3)
         sort!(mesh.patios) #Keep monotonic
     end
-    mesh.faces = cons(f, mesh.faces)
+    push!(mesh.faces, f)
     update!(mesh.bounds, f)
 end
 
@@ -364,7 +347,7 @@ end
 # ----------------------------------------------------------------------------
 # Returns:
 # -------------------- --------------------------------------------------
-# `LineSegment`        A `LineSegment` at the requested height in the X-Y plane.
+# `LineSegment`        A `LineSegment` at the requested height in the slice plane.
 # ----------------------------------------------------------------------------
 function LineSegment(f::Face, z::Float64)
 
@@ -407,7 +390,7 @@ end
 # ----------------------------------------------------------------------------
 # Returns:
 # -------------------- --------------------------------------------------
-# `LineSegment`        A `LineSegment` at the requested height in the X-Y plane.
+# `LineSegment`        A `LineSegment` at the requested height in the slice plane.
 # ----------------------------------------------------------------------------
 function LineSegment(p0::Vector3, p1::Vector3, p2::Vector3, z::Float64, normal::Vector3)
     start = Vector2(p0.e1 + (p1.e1 - p0.e1) * (z - p0.e3) / (p1.e3 - p0.e3),
