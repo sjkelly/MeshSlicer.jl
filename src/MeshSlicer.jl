@@ -7,8 +7,8 @@ using ImmutableArrays
 using DataStructures
 import Base.push!
 
-export Bounds, Face, PolygonMesh, LineSegment, PolygonSlice,
-       update!, rotate!, rotate
+export Bounds, Face, PolygonMesh, LineSegment,
+       update!, rotate!, rotate, MeshSlice
 
 type Bounds{T<:Number}
     xmax::T
@@ -92,12 +92,7 @@ end
 # ----------------------------------------------------------------------------
 function MeshSlice(mesh::PolygonMesh, heights::Array{Float64})
 
-    slices = MeshSlice[]
-
-    #Preinitialize the array
-    for height in heights
-        push!(slices, PolygonSlice(LineSegment[],height))
-    end
+    slices = [LineSegment[] for i = 1:length(heights)]
 
     for face in mesh.faces
         zmin, zmax = extrema([face.vertices[j].e3 for j=1:3])
@@ -106,13 +101,22 @@ function MeshSlice(mesh::PolygonMesh, heights::Array{Float64})
             if height > zmax
                 break
             elseif zmin <= height
-                push!(slices[i].segments, LineSegment(face, height))
+                seg = LineSegment(face, height)
+                if seg != nothing
+                    push!(slices[i], seg)
+                end
             end
             i = i + 1
         end
     end
 
-    return slices
+    polys = MeshSlice[]
+
+    for i = 1:length(heights)
+        push!(polys, MeshSlice(Polygon(slices[i]), heights[i]))
+    end
+
+    return polys
 end
 
 # ##Polygon()
@@ -154,6 +158,52 @@ end
 # `Array{Polygon}`     An `Array` of `Polygon`.
 # ----------------------------------------------------------------------------
 function Polygon(lines::Array{LineSegment})
+    eps = 0.0001
+    n = length(lines)
+    if n == 0
+        return [Polygon()]
+    end
+    polys = Polygon[]
+    paired = [false for i = 1:n]
+    start = 1
+    seg = 1
+    paired[seg] = true
+
+    while true
+        #Start new polygon with seg
+        poly = Polygon()
+        push!(poly, lines[seg])
+        couldpair = true
+        idx = seg
+
+        #Pair lines until we get to start point
+        while norm(lines[start].start - lines[seg].finish) >= eps && couldpair
+            for i = 1:n
+                if !paired[i]
+                    if norm(lines[seg].finish - lines[i].start) <= eps
+                        push!(poly, lines[i])
+                        paired[i] = true
+                        seg = i
+                    end
+                end
+            end
+            if seg == idx
+                couldpair = false #We couldn't pair the seg with anything
+            end
+        end
+
+        push!(polys,poly)
+        for i = 1:length(lines)
+            if !paired[i] #Find next unpaired seg
+                start = i
+                paired[i] = true
+                seg = start
+                break
+            elseif i == length(lines) #we have paired each segment
+                return polys
+            end
+        end
+    end
 end
 
 # ##PolygonMesh()
