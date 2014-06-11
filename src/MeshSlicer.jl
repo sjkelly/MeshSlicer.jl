@@ -44,34 +44,6 @@ type MeshSlice
     layer::Float64
 end
 
-
-# ##MeshSlice(*mesh::PolygonMesh, height::Float64*)
-#
-# Create a MeshSlice from a PolygonMesh at a given height.
-#
-# ----------------------------------------------------------------------------
-# Parameters:
-# -------------------- --------------------------------------------------
-# `mesh`               The `PolygonMesh` to slice.
-#
-# `height`             The height at which to slice.
-# ----------------------------------------------------------------------------
-function MeshSlice(mesh::PolygonMesh, height::Float64)
-
-    segmentlist = LineSegment[]
-
-    for face in mesh.faces
-        zmin, zmax = extrema([face.vertices[j].e3 for j=1:3])
-        if height > zmax
-            break
-        elseif zmin <= height
-            push!(segmentlist, LineSegment(face, height))
-        end
-    end
-
-    return MeshSlice(segmentlist, height)
-end
-
 # ##MeshSlice(*mesh::PolygonMesh, heights::Array{Float64}*)
 #
 # Create an array of MeshSlice at heights given by a
