@@ -127,7 +127,7 @@ end
 # ----------------------------------------------------------------------------
 Polygon() = Polygon(LineSegment[])
 
-# ##Polygon(*lines::Array{LineSegment}*)
+# ##Polygon(*lines::Array{LineSegment}, eps::Real*)
 #
 # Construct an `Array` of `Polygon` from an `Array` of `LineSegments`.
 #
@@ -135,6 +135,8 @@ Polygon() = Polygon(LineSegment[])
 # Parameters:
 # -------------------- --------------------------------------------------
 # `lines`              An unorder `Array` of `LineSegment`.
+#
+# `eps`                The tolerance in which to count starting and finishing points as identical.
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
 # Returns:
@@ -156,11 +158,9 @@ function Polygon(lines::Array{LineSegment}, eps::Real)
         #Start new polygon with seg
         poly = Polygon()
         push!(poly.segments, lines[seg])
-        couldpair = true
-        idx = seg
 
         #Pair lines until we get to start point
-        while norm(lines[start].start - lines[seg].finish) >= eps && couldpair
+        while norm(lines[start].start - lines[seg].finish) >= eps
             for i = 1:n
                 if !paired[i]
                     if norm(lines[seg].finish - lines[i].start) <= eps
@@ -170,12 +170,14 @@ function Polygon(lines::Array{LineSegment}, eps::Real)
                     end
                 end
             end
-            if seg == idx
-                couldpair = false #We couldn't pair the seg with anything
+            if seg == start #We couldn't pair the segment
+                break
             end
         end
 
         push!(polys,poly)
+
+        #start new polygon
         for i = 1:length(lines)
             if !paired[i] #Find next unpaired seg
                 start = i
