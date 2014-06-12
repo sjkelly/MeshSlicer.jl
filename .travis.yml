@@ -18,4 +18,5 @@ script:
   - if [ $JULIAVERSION = "julianightlies" ]; then julia --code-coverage test/runtests.jl; fi
   - if [ $JULIAVERSION = "juliareleases" ]; then julia test/runtests.jl; fi
 after_success:
-  - if [ $JULIAVERSION = "julianightlies" ]; then julia -e 'cd(Pkg.dir("MeshSlicer")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
+  - if [ $JULIAVERSION = "julianightlies" ]; then julia -e 'cd(Pkg.dir("MeshSlicer")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'; fi
+
