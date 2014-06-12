@@ -11,7 +11,7 @@ This is a library for slicing [polygon mesh](http://en.wikipedia.org/wiki/Polygo
 See: [sjkelly.me/MeshSlicer.jl](http://sjkelly.me/MeshSlicer.jl/)
 
 ## Install
-This package is not yet in the Julia package repository. For now, you can call ```Pkg.clone(https://github.com/sjkelly/MeshSlicer.jl.git)``` in the Julia REPL.
+This package is not yet in the Julia package repository. For now, you can call ```Pkg.clone("https://github.com/sjkelly/MeshSlicer.jl.git")``` in the Julia REPL.
 
 
 ### Weather
