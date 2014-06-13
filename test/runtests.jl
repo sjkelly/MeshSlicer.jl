@@ -110,9 +110,7 @@ println("Testing slicing...")
 slice1 = MeshSlice(binarymesh, [0.0,5.0,10.0])
 Test.with_handler(test_handler) do
     for slice in slice1
-        println("hi")
         for poly in slice.polygons
-            println("hi again")
             n = length(poly.segments)
             for i = 1:n-1
                 @test poly.segments[i].finish == poly.segments[i+1].start
@@ -121,6 +119,13 @@ Test.with_handler(test_handler) do
     end
 end
 
+println("Tesing Polygon construction...")
+l1 = LineSegment(Vector2(0.0,0.0), Vector2(0.0,1.0), Vector3(0.0,0.0,0.0))
+l2 = LineSegment(Vector2(0.2,1.0), Vector2(2.0,1.0), Vector3(0.0,0.0,0.0))
+Test.with_handler(test_handler) do
+    @test length(Polygon([l1,l2], 0.5)) == 1
+    @test length(Polygon([l1,l2], 0.1)) == 2
+end
 
 # test mesh rotation
 println("Testing Mesh Rotation...")
