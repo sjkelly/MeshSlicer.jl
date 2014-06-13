@@ -7,7 +7,7 @@ using ImmutableArrays
 import Base.push!
 
 export Bounds, Face, PolygonMesh, LineSegment,
-       update!, rotate!, rotate, MeshSlice
+       update!, rotate!, rotate, MeshSlice, Polygon
 
 type Bounds{T<:Number}
     xmax::T
@@ -132,7 +132,10 @@ function Polygon(lines::Array{LineSegment}, eps::Real)
         push!(poly.segments, lines[seg])
 
         #Pair lines until we get to start point
+        lastseg = seg
         while norm(lines[start].start - lines[seg].finish) >= eps
+            lastseg = seg
+
             for i = 1:n
                 if !paired[i]
                     if norm(lines[seg].finish - lines[i].start) <= eps
@@ -142,13 +145,14 @@ function Polygon(lines::Array{LineSegment}, eps::Real)
                     end
                 end
             end
-            if seg == start #We couldn't pair the segment
+
+            if (seg == start #We couldn't pair the segment
+                || seg == lastseg) #The polygon can't be closed
                 break
             end
         end
 
         push!(polys,poly)
-
         #start new polygon
         for i = 1:length(lines)
             if !paired[i] #Find next unpaired seg
