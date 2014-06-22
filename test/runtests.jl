@@ -82,6 +82,10 @@ l5 = LineSegment(testpoint2[2],testpoint2[3],testpoint2[1], 0.5, normal)
 l6 = LineSegment(testFace, 5.0)
 l7 = LineSegment(testpoint2[2],testpoint2[3],testpoint2[1], 1.0, normal)
 
+testpoint3 = Vector3[[0.0,0.0,0.0],[0.0,1.0,1.0],[0.0,0.0,2.0]]
+l8 = LineSegment(testpoint3[1], testpoint3[2], testpoint3[3], 0.9, normal)
+l9 = LineSegment(testpoint3[3], testpoint3[1], testpoint3[2], 1.5, normal)
+
 Test.with_handler(test_handler) do
     @test l1.start == Vector2(0.0, 0.5)
     @test l1.finish == Vector2(0.0, 1.0)
@@ -97,6 +101,10 @@ Test.with_handler(test_handler) do
     @test l6.normal == Vector3(1.0,0.0,0.0)
     @test l7.start == Vector2(1.0, 1.0)
     @test l7.finish == Vector2(1.0, 1.0)
+    @test l8.start == Vector2(0.0, 0.9)
+    @test l8.finish == Vector2(0.0, 0.0)
+    @test l9.start == Vector2(0.0, 0.0)
+    @test l9.finish == Vector2(0.0, 0.5)
 end
 
 # test binary STL
