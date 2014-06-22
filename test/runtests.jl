@@ -4,6 +4,10 @@ using MeshSlicer
 using Base.Test
 using ImmutableArrays
 
+# Make pwd MeshSlicer/test
+pkg_path = Pkg.dir("MeshSlicer")
+cd(pkg_path*"/test")
+
 # getmesh/getface test
 println("Testing PolygonMesh...")
 
