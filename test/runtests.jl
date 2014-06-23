@@ -39,9 +39,9 @@ println("Testing Bounds...")
 # Test bounds on translated cube
 # translate([1,2,3])cube([4,5,6]);
 testBounds2 = Bounds(4.0,6.0,9.0,1.0,2.0,4.0)
-updateFace = Face(Vector3[[5.0,3.0,4.0],
-                      [2.0,7.0,4.0],
-                      [2.0,3.0,3.0]],
+updateFace = Face(Vector3[Vector3(5.0,3.0,4.0),
+                      Vector3(2.0,7.0,4.0),
+                      Vector3(2.0,3.0,3.0)],
                       Vector3(-1.0,0.0,0.0)) # contains correct bounds for cube
 update!(testBounds2, updateFace)
 resultmesh2 = PolygonMesh("./data/translated_cube.stl")
@@ -63,20 +63,20 @@ println("Tesing patio detection...")
 
 
 # Test LineSegment
-testpoint1 = Vector3[[0.0,0.0,0.0],[0.0,1.0,0.0],[0.0,1.0,1.0]]
+testpoint1 = Vector3[Vector3(0.0,0.0,0.0),Vector3(0.0,1.0,0.0),Vector3(0.0,1.0,1.0)]
 normal = Vector3(1.0, 1.0, 1.0)
 l1 = LineSegment(testpoint1[3],testpoint1[1],testpoint1[2], 0.5, normal)
 l2 = LineSegment(testpoint1[3],testpoint1[2],testpoint1[1], 0.5, normal)
 l3 = LineSegment(testpoint1[3],testpoint1[2],testpoint1[1], 0.0, normal)
 
-testpoint2 = Vector3[[0.0,0.0,0.0],[1.0,1.0,1.0],[0.0,1.0,0.0]]
+testpoint2 = Vector3[Vector3(0.0,0.0,0.0),Vector3(1.0,1.0,1.0),Vector3(0.0,1.0,0.0)]
 l4 = LineSegment(testpoint2[2],testpoint2[1],testpoint2[3], 0.5, normal)
 l5 = LineSegment(testpoint2[2],testpoint2[3],testpoint2[1], 0.5, normal)
 
 l6 = LineSegment(testFace, 5.0)
 l7 = LineSegment(testpoint2[2],testpoint2[3],testpoint2[1], 1.0, normal)
 
-testpoint3 = Vector3[[0.0,0.0,0.0],[0.0,1.0,1.0],[0.0,0.0,2.0]]
+testpoint3 = Vector3[Vector3(0.0,0.0,0.0),Vector3(0.0,1.0,1.0),Vector3(0.0,0.0,2.0)]
 l8 = LineSegment(testpoint3[1], testpoint3[2], testpoint3[3], 0.9, normal)
 l9 = LineSegment(testpoint3[3], testpoint3[1], testpoint3[2], 1.5, normal)
 
