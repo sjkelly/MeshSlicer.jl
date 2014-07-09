@@ -6,7 +6,7 @@ module MeshSlicer
 using ImmutableArrays
 import Base.push!
 
-export Bounds3, Face, PolygonMesh, LineSegment,
+export Bounds3, Bounds2, Face, PolygonMesh, LineSegment,
        update!, rotate!, rotate, MeshSlice, Polygon
 
 type Bounds3{T<:Number}
@@ -16,6 +16,13 @@ type Bounds3{T<:Number}
     xmin::T
     ymin::T
     zmin::T
+end
+
+type Bounds2{T<:Number}
+    xmax::T
+    ymax::T
+    xmin::T
+    ymin::T
 end
 
 type Face
@@ -36,10 +43,12 @@ type LineSegment
 end
 
 type Polygon
+    bounds::Bounds2
     segments::Array{LineSegment}
 end
 
 type MeshSlice
+    bounds::Bounds2
     polygons::Array{Polygon}
     layer::Float64
 end
@@ -64,6 +73,7 @@ end
 function MeshSlice(mesh::PolygonMesh, heights::Array{Float64})
     eps = 0.0001
     slices = [LineSegment[] for i = 1:length(heights)]
+    bounds = [Bounds2() for i = 1:length(heights)]
 
     for face in mesh.faces
         zmin, zmax = extrema([face.vertices[j].e3 for j=1:3])
@@ -75,6 +85,7 @@ function MeshSlice(mesh::PolygonMesh, heights::Array{Float64})
                 seg = LineSegment(face, height)
                 if seg != nothing
                     push!(slices[i], seg)
+                    update!(bounds[i], seg)
                 end
             end
             i = i + 1
@@ -84,7 +95,7 @@ function MeshSlice(mesh::PolygonMesh, heights::Array{Float64})
     polys = MeshSlice[]
 
     for i = 1:length(heights)
-        push!(polys, MeshSlice(Polygon(slices[i], eps), heights[i]))
+        push!(polys, MeshSlice(bounds[i], Polygon(slices[i], eps), heights[i]))
     end
 
     return polys
@@ -97,7 +108,7 @@ end
 # -------------------- --------------------------------------------------
 # `Polygon`            An empty `Polygon`.
 # ----------------------------------------------------------------------------
-Polygon() = Polygon(LineSegment[])
+Polygon() = Polygon(Bounds2(), LineSegment[])
 
 # ##Polygon(*lines::Array{LineSegment}, eps::Real*)
 #
@@ -129,7 +140,7 @@ function Polygon(lines::Array{LineSegment}, eps::Real)
     while true
         #Start new polygon with seg
         poly = Polygon()
-        push!(poly.segments, lines[seg])
+        push!(poly, lines[seg])
 
         #Pair lines until we get to start point
         lastseg = seg
@@ -139,7 +150,7 @@ function Polygon(lines::Array{LineSegment}, eps::Real)
             for i = 1:n
                 if !paired[i]
                     if norm(lines[seg].finish - lines[i].start) <= eps
-                        push!(poly.segments, lines[i])
+                        push!(poly, lines[i])
                         paired[i] = true
                         seg = i
                     end
@@ -312,6 +323,11 @@ function push!(mesh::PolygonMesh, f::Face)
     update!(mesh.bounds, f)
 end
 
+function push!(poly::Polygon, seg::LineSegment)
+    push!(poly.segments, seg)
+    update!(poly.bounds, seg)
+end
+
 # ##LineSegment(*f::Face, z::Float64*)
 #
 # Get a `LineSegment` in the X-Y plane from a `Face` at a requested height.
@@ -398,7 +414,7 @@ end
 # `Bound3`              An empty `Bounds3` of type `Float64`.
 # ----------------------------------------------------------------------------
 Bounds3() = Bounds3{Float64}(-Inf,-Inf,-Inf,Inf,Inf,Inf)
-
+Bounds2() = Bounds2{Float64}(-Inf,-Inf,Inf,Inf)
 # ##update!(*box::Bounds, face::Face*)
 #
 # ----------------------------------------------------------------------------
@@ -422,6 +438,23 @@ function update!(box::Bounds3, face::Face)
     box.zmax = max(zmax, box.zmax)
 end
 
+function update!(box::Bounds2, line::LineSegment)
+    #update the bounds against a line segement
+
+    box.xmin = min(line.start[1], line.finish[1])
+    box.ymin = min(line.start[2], line.finish[2])
+    box.xmax = max(line.start[1], line.finish[1])
+    box.ymax = max(line.start[2], line.finish[2])
+end
+
+function update!(b1::Bounds2, b2::Bounds2)
+
+    b1.xmin = min(b1.xmin, b2.xmin)
+    b1.ymin = min(b1.ymin, b2.ymin)
+    b1.xmax = max(b1.xmax, b2.xmax)
+    b1.ymax = max(b1.ymax, b2.ymax)
+end
+
 # ##==(*a::Bounds3, b::Bounds3*)
 #
 # ----------------------------------------------------------------------------
@@ -438,5 +471,11 @@ function ==(a::Bounds3, b::Bounds3)
             a.zmin == b.zmin)
 end
 
+function ==(a::Bounds2, b::Bounds2)
+    return (a.xmax == b.xmax &&
+            a.ymax == b.ymax &&
+            a.xmin == b.xmin &&
+            a.ymin == b.ymin)
+end
 
 end # module

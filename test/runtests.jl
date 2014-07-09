@@ -5,8 +5,7 @@ using Base.Test
 using ImmutableArrays
 
 # Make pwd MeshSlicer/test
-pkg_path = Pkg.dir("MeshSlicer")
-cd(pkg_path*"/test")
+data_path = Pkg.dir("MeshSlicer")*"/test/data/"
 
 # getmesh/getface test
 println("Testing PolygonMesh...")
@@ -19,7 +18,7 @@ testFace = Face(Vector3[Vector3(10.0,0.0,10.0),
 
 testBounds = Bounds3{Float64}(10.0,10.0,10.0,0,0,0)
 
-resultmesh = PolygonMesh("./data/cube.stl")
+resultmesh = PolygonMesh(data_path*"cube.stl")
 
 
 @test resultmesh.faces[end].vertices == testFace.vertices
@@ -44,7 +43,7 @@ updateFace = Face(Vector3[Vector3(5.0,3.0,4.0),
                       Vector3(2.0,3.0,3.0)],
                       Vector3(-1.0,0.0,0.0)) # contains correct bounds for cube
 update!(testBounds2, updateFace)
-resultmesh2 = PolygonMesh("./data/translated_cube.stl")
+resultmesh2 = PolygonMesh(data_path*"translated_cube.stl")
 
 @test resultmesh2.bounds.xmax == testBounds2.xmax
 @test resultmesh2.bounds.ymax == testBounds2.ymax
@@ -103,7 +102,7 @@ l9 = LineSegment(Face(Vector3[testpoint3[3], testpoint3[1], testpoint3[2]], norm
 
 # test binary STL
 println("Testing Binary STL import...")
-binarymesh = PolygonMesh("./data/cube_binary.stl")
+binarymesh = PolygonMesh(data_path*"cube_binary.stl")
 @test binarymesh.bounds == Bounds3(10.0,10.0,10.0,0.0,0.0,0.0)
 
 println("Testing slicing...")
