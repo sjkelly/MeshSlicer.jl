@@ -1,0 +1,2 @@
+"Category","Benchmark","Iterations","TotalWall","AverageWall","MaxWall","MinWall","Timestamp","JuliaHash","CodeHash","OS","CPUCores"
+"Slicing","cell lamp",10,44.921060692000005,4.4921060692,4.580505377,4.306660126,"2014-07-08 23:09:58","892f070e2623d56876af58ebb7f159f5b18191fa","2e7ae08cc8243a2636a85a3229b2806f311485cd","Linux",4
