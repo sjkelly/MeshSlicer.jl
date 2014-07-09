@@ -6,10 +6,10 @@ module MeshSlicer
 using ImmutableArrays
 import Base.push!
 
-export Bounds, Face, PolygonMesh, LineSegment,
+export Bounds3, Face, PolygonMesh, LineSegment,
        update!, rotate!, rotate, MeshSlice, Polygon
 
-type Bounds{T<:Number}
+type Bounds3{T<:Number}
     xmax::T
     ymax::T
     zmax::T
@@ -24,7 +24,7 @@ type Face
 end
 
 type PolygonMesh
-    bounds::Bounds
+    bounds::Bounds3
     faces::Array{Face}
     patios::Array{Float64}
 end
@@ -174,7 +174,7 @@ end
 # -------------------- --------------------------------------------------
 # `PolygonMesh`        An empty `PolygonMesh`.
 # ----------------------------------------------------------------------------
-PolygonMesh() = PolygonMesh(Bounds(), Face[], Float64[])
+PolygonMesh() = PolygonMesh(Bounds3(), Face[], Float64[])
 
 # ##PolygonMesh(*path::String*)
 #
@@ -390,14 +390,14 @@ function ==(a::LineSegment, b::LineSegment)
             a.finish == b.finish)
 end
 
-# ##Bounds()
+# ##Bounds3()
 #
 # ----------------------------------------------------------------------------
 # Returns:
 # -------------------- --------------------------------------------------
-# `Bound`              An empty `Bounds` of type `Float64`.
+# `Bound3`              An empty `Bounds3` of type `Float64`.
 # ----------------------------------------------------------------------------
-Bounds() = Bounds{Float64}(-Inf,-Inf,-Inf,Inf,Inf,Inf)
+Bounds3() = Bounds3{Float64}(-Inf,-Inf,-Inf,Inf,Inf,Inf)
 
 # ##update!(*box::Bounds, face::Face*)
 #
@@ -408,7 +408,7 @@ Bounds() = Bounds{Float64}(-Inf,-Inf,-Inf,Inf,Inf,Inf)
 #
 # `face`               The `Face` to update the bounds against.
 # ----------------------------------------------------------------------------
-function update!(box::Bounds, face::Face)
+function update!(box::Bounds3, face::Face)
     #update the bounds against a face
     xmin, xmax = extrema([face.vertices[i].e1 for i = 1:3])
     ymin, ymax = extrema([face.vertices[i].e2 for i = 1:3])
@@ -422,14 +422,14 @@ function update!(box::Bounds, face::Face)
     box.zmax = max(zmax, box.zmax)
 end
 
-# ##==(*a::Bounds, b::Bounds*)
+# ##==(*a::Bounds3, b::Bounds3*)
 #
 # ----------------------------------------------------------------------------
 # Returns:
 # -------------------- --------------------------------------------------
-# `Bool`               Whether two `Bounds` are equal.
+# `Bool`               Whether two `Bounds3` are equal.
 # ----------------------------------------------------------------------------
-function ==(a::Bounds, b::Bounds)
+function ==(a::Bounds3, b::Bounds3)
     return (a.xmax == b.xmax &&
             a.ymax == b.ymax &&
             a.zmax == b.zmax &&

@@ -17,7 +17,7 @@ testFace = Face(Vector3[Vector3(10.0,0.0,10.0),
                       Vector3(10.0,10.0,10.0)],
                       Vector3(1.0,0.0,0.0))
 
-testBounds = Bounds{Float64}(10.0,10.0,10.0,0,0,0)
+testBounds = Bounds3{Float64}(10.0,10.0,10.0,0,0,0)
 
 resultmesh = PolygonMesh("./data/cube.stl")
 
@@ -38,7 +38,7 @@ println("Testing Bounds...")
 
 # Test bounds on translated cube
 # translate([1,2,3])cube([4,5,6]);
-testBounds2 = Bounds(4.0,6.0,9.0,1.0,2.0,4.0)
+testBounds2 = Bounds3(4.0,6.0,9.0,1.0,2.0,4.0)
 updateFace = Face(Vector3[Vector3(5.0,3.0,4.0),
                       Vector3(2.0,7.0,4.0),
                       Vector3(2.0,3.0,3.0)],
@@ -104,7 +104,7 @@ l9 = LineSegment(Face(Vector3[testpoint3[3], testpoint3[1], testpoint3[2]], norm
 # test binary STL
 println("Testing Binary STL import...")
 binarymesh = PolygonMesh("./data/cube_binary.stl")
-@test binarymesh.bounds == Bounds(10.0,10.0,10.0,0.0,0.0,0.0)
+@test binarymesh.bounds == Bounds3(10.0,10.0,10.0,0.0,0.0,0.0)
 
 println("Testing slicing...")
 slice1 = MeshSlice(binarymesh, [0.0,5.0,10.0])
@@ -138,7 +138,7 @@ for i = 1:3
 end
 
 rotate!(binarymesh, 45.0, [1.0,0.0,0.0], [0.0,0.0,0.0])
-@test binarymesh.bounds == Bounds(10.0,10.0,13.762255133518483,0.0,-8.509035245341185,0.0)
+@test binarymesh.bounds == Bounds3(10.0,10.0,13.762255133518483,0.0,-8.509035245341185,0.0)
 
 rotate!(binarymesh, 45.0, [0.0,1.0,0.0], [0.0,0.0,0.0])
-@test binarymesh.bounds == Bounds(16.96357128682594,10.0,13.762255133518483,0.0,-8.509035245341185,-8.509035245341185)
+@test binarymesh.bounds == Bounds3(16.96357128682594,10.0,13.762255133518483,0.0,-8.509035245341185,-8.509035245341185)
