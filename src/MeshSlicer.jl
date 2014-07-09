@@ -440,15 +440,13 @@ end
 
 function update!(box::Bounds2, line::LineSegment)
     #update the bounds against a line segement
-
-    box.xmin = min(line.start[1], line.finish[1])
-    box.ymin = min(line.start[2], line.finish[2])
-    box.xmax = max(line.start[1], line.finish[1])
-    box.ymax = max(line.start[2], line.finish[2])
+    box.xmin = min(box.xmin, min(line.start[1], line.finish[1]))
+    box.ymin = min(box.ymin, min(line.start[2], line.finish[2]))
+    box.xmax = max(box.xmax, max(line.start[1], line.finish[1]))
+    box.ymax = max(box.xmax, max(line.start[2], line.finish[2]))
 end
 
 function update!(b1::Bounds2, b2::Bounds2)
-
     b1.xmin = min(b1.xmin, b2.xmin)
     b1.ymin = min(b1.ymin, b2.ymin)
     b1.xmax = max(b1.xmax, b2.xmax)
