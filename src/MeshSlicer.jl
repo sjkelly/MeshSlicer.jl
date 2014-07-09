@@ -426,16 +426,16 @@ Bounds2() = Bounds2{Float64}(-Inf,-Inf,Inf,Inf)
 # ----------------------------------------------------------------------------
 function update!(box::Bounds3, face::Face)
     #update the bounds against a face
-    xmin, xmax = extrema([face.vertices[i].e1 for i = 1:3])
-    ymin, ymax = extrema([face.vertices[i].e2 for i = 1:3])
-    zmin, zmax = extrema([face.vertices[i].e3 for i = 1:3])
+    x1, y1, z1 = face.vertices[1]
+    x2, y2, z2 = face.vertices[2]
+    x3, y3, z3 = face.vertices[3]
 
-    box.xmin = min(xmin, box.xmin)
-    box.ymin = min(ymin, box.ymin)
-    box.zmin = min(zmin, box.zmin)
-    box.xmax = max(xmax, box.xmax)
-    box.ymax = max(ymax, box.ymax)
-    box.zmax = max(zmax, box.zmax)
+    box.xmin = min(min(min(box.xmin, x1), x2), x3)
+    box.ymin = min(min(min(box.ymin, y1), y2), y3)
+    box.zmin = min(min(min(box.zmin, z1), z2), z3)
+    box.xmax = max(max(max(box.xmax, x1), x2), x3)
+    box.ymax = max(max(max(box.ymax, y1), y2), y3)
+    box.zmax = max(max(max(box.zmax, z1), z2), z3)
 end
 
 function update!(box::Bounds2, line::LineSegment)
