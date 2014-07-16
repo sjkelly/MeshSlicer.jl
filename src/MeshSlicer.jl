@@ -70,7 +70,7 @@ end
 # -------------------- --------------------------------------------------
 # `Array{MeshSlice}`   An `Array` of `MeshSlice` at the requested height.
 # ----------------------------------------------------------------------------
-function MeshSlice(mesh::PolygonMesh, heights::Array{Float64}, eps=0.00001)
+function MeshSlice(mesh::PolygonMesh, heights::Array{Float64}; eps=0.00001)
     slices = [LineSegment[] for i = 1:length(heights)]
     bounds = [Bounds2() for i = 1:length(heights)]
 
