@@ -117,10 +117,12 @@ for slice in slice1
 end
 
 println("Tesing Polygon construction...")
-l1 = LineSegment(Vector2(0.0,0.0), Vector2(0.0,1.0), Vector3(0.0,0.0,0.0))
-l2 = LineSegment(Vector2(0.2,1.0), Vector2(2.0,1.0), Vector3(0.0,0.0,0.0))
-@test length(Polygon([l1,l2], 0.5)) == 1
-@test length(Polygon([l1,l2], 0.1)) == 2
+ep = 0.1
+l1 = LineSegment(Vector2(0.0+ep,0.0), Vector2(0.0,1.0+ep), Vector3(0.0,0.0,0.0))
+l2 = LineSegment(Vector2(0.0+ep,1.0), Vector2(0.5-ep,1.0), Vector3(0.0,0.0,0.0))
+l3 = LineSegment(Vector2(0.5+ep,1.0), Vector2(0.0,0.0+ep), Vector3(0.0,0.0,0.0))
+@test length(Polygon([l1,l2,l3], eps=ep*2, autoeps=false)) == 1
+@test length(Polygon([l1,l2,l3], eps=ep/2, autoeps=false)) == 0
 
 # test mesh rotation
 println("Testing Mesh Rotation...")
@@ -141,3 +143,11 @@ rotate!(binarymesh, 45.0, [1.0,0.0,0.0], [0.0,0.0,0.0])
 
 rotate!(binarymesh, 45.0, [0.0,1.0,0.0], [0.0,0.0,0.0])
 @test binarymesh.bounds == Bounds3(16.96357128682594,10.0,13.762255133518483,0.0,-8.509035245341185,-8.509035245341185)
+
+# Issue 21
+mesh = PolygonMesh(data_path*"cube.stl")
+a = MeshSlice(mesh, [eps()])
+@test length(a) == 1
+@test length(a[1].polygons) == 1
+@test length(a[1].polygons[1].segments) == 4
+

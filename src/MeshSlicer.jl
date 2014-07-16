@@ -5,6 +5,7 @@ module MeshSlicer
 
 using ImmutableArrays
 import Base.push!
+import Base.show
 
 export Bounds3, Bounds2, Face, PolygonMesh, LineSegment,
        update!, rotate!, rotate, MeshSlice, Polygon
@@ -53,6 +54,16 @@ type MeshSlice
     layer::Float64
 end
 
+
+function show(io::IO, poly::Polygon)
+    println("Polygon:")
+    println("\tBounds:", poly.bounds)
+    println("\tSegments:")
+    for seg in poly.segments
+        println("\t\tStart:", seg.start, " Finish:", seg.finish)
+    end
+end
+
 # ##MeshSlice(*mesh::PolygonMesh, heights::Array{Float64}*)
 #
 # Create an array of MeshSlice at heights given by a
@@ -70,7 +81,7 @@ end
 # -------------------- --------------------------------------------------
 # `Array{MeshSlice}`   An `Array` of `MeshSlice` at the requested height.
 # ----------------------------------------------------------------------------
-function MeshSlice(mesh::PolygonMesh, heights::Array{Float64}; eps=0.00001)
+function MeshSlice(mesh::PolygonMesh, heights::Array{Float64}; eps=0.00001, autoeps=true)
     slices = [LineSegment[] for i = 1:length(heights)]
     bounds = [Bounds2() for i = 1:length(heights)]
 
@@ -94,7 +105,7 @@ function MeshSlice(mesh::PolygonMesh, heights::Array{Float64}; eps=0.00001)
     polys = MeshSlice[]
 
     for i = 1:length(heights)
-        push!(polys, MeshSlice(bounds[i], Polygon(slices[i], eps), heights[i]))
+        push!(polys, MeshSlice(bounds[i], Polygon(slices[i], eps=eps, autoeps=autoeps), heights[i]))
     end
 
     return polys
@@ -125,7 +136,7 @@ Polygon() = Polygon(Bounds2(), LineSegment[])
 # -------------------- --------------------------------------------------
 # `Array{Polygon}`     An `Array` of `Polygon`.
 # ----------------------------------------------------------------------------
-function Polygon(lines::Array{LineSegment}, eps::Real)
+function Polygon(lines::Array{LineSegment}; eps=0.00001, autoeps=true)
     n = length(lines)
     if n == 0
         return [Polygon()]
@@ -135,6 +146,12 @@ function Polygon(lines::Array{LineSegment}, eps::Real)
     start = 1
     seg = 1
     paired[seg] = true
+
+    if autoeps
+        for segment in lines
+            eps = min(eps, norm(segment.start-segment.finish)/2)
+        end
+    end
 
     while true
         #Start new polygon with seg
@@ -162,7 +179,9 @@ function Polygon(lines::Array{LineSegment}, eps::Real)
             end
         end
 
-        push!(polys,poly)
+        if length(poly.segments) > 2
+            push!(polys,poly)
+        end
         #start new polygon
         for i = 1:length(lines)
             if !paired[i] #Find next unpaired seg
