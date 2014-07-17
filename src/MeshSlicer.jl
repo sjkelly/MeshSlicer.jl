@@ -180,6 +180,22 @@ function Polygon(lines::Array{LineSegment}; eps=0.00001, autoeps=true)
         end
 
         if length(poly.segments) > 2
+            closed = true
+            if poly.segments[1].start != poly.segments[end].finish
+                closed = false
+            end
+            for i = 1:length(poly.segments)-2
+                if closed
+                    break
+                end
+                for j = i+2:length(poly.segments)
+                    if poly.segments[i].start == poly.segments[j].finish
+                        poly.segments = poly.segments[i:j]
+                        closed = true
+                        break
+                    end
+                end
+            end
             push!(polys,poly)
         end
         #start new polygon
