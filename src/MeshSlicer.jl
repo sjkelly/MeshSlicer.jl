@@ -29,7 +29,16 @@ end
 type Face
     vertices::Array{Vector3{Float64}}
     normal::Vector3{Float64}
+    zmin::Float64
+    zmax::Float64
 end
+
+function Face(vertices::Array, normal::Vector3{Float64})
+    zmax = max(max(vertices[1].e3, vertices[2].e3), vertices[3].e3)
+    zmin = min(min(vertices[1].e3, vertices[2].e3), vertices[3].e3)
+    return Face(vertices, normal, zmin, zmax)
+end
+
 
 type PolygonMesh
     bounds::Bounds3
@@ -86,12 +95,11 @@ function MeshSlice(mesh::PolygonMesh, heights::Array{Float64}; eps=0.00001, auto
     bounds = [Bounds2() for i = 1:length(heights)]
 
     for face in mesh.faces
-        zmin, zmax = extrema([face.vertices[j].e3 for j=1:3])
         i = 1
         for height in heights
-            if height > zmax
+            if height > face.zmax
                 break
-            elseif zmin <= height
+            elseif face.zmin <= height
                 seg = LineSegment(face, height)
                 if seg != nothing
                     push!(slices[i], seg)
@@ -221,6 +229,19 @@ end
 # ----------------------------------------------------------------------------
 PolygonMesh() = PolygonMesh(Bounds3(), Face[], Float64[])
 
+function binarySTLvertex(file)
+    return Vector3(float64(read(file, Float32)),
+                   float64(read(file, Float32)),
+                   float64(read(file, Float32)))
+end
+
+function binarySTLvertices(file)
+    return Vector3[binarySTLvertex(file),
+            binarySTLvertex(file),
+            binarySTLvertex(file)]
+end
+
+
 # ##PolygonMesh(*path::String*)
 #
 # ----------------------------------------------------------------------------
@@ -268,8 +289,8 @@ function PolygonMesh(path::String)
                 readbytes(file, 75) # throw out header
                 read(file, Uint32) # throwout triangle count
                 while !eof(file)
-                    normal = Vector3([float64(read(file, Float32)) for i = 1:3])
-                    vertices = [Vector3([float64(read(file, Float32)) for i = 1:3]) for j = 1:3]
+                    normal = binarySTLvertex(file)
+                    vertices = binarySTLvertices(file)
                     skip(file, 2) # throwout 16bit attribute
                     push!(mesh, Face(vertices,normal))
                 end
@@ -307,6 +328,8 @@ function rotate!(mesh::PolygonMesh, angle::Float64, axis::Array{Float64}, throug
                             x, y, z = face.vertices[i];
                             rotate(x, y, z, a, b, c, u, v, w, angle)
                          end for i = 1:3]
+        face.zmax = max(max(face.vertices[1].e3, face.vertices[2].e3), face.vertices[3].e3)
+        face.zmin = min(min(face.vertices[1].e3, face.vertices[2].e3), face.vertices[3].e3)
         update!(mesh.bounds, face)
     end
 end
@@ -465,10 +488,10 @@ function update!(box::Bounds3, face::Face)
 
     box.xmin = min(min(min(box.xmin, x1), x2), x3)
     box.ymin = min(min(min(box.ymin, y1), y2), y3)
-    box.zmin = min(min(min(box.zmin, z1), z2), z3)
+    box.zmin = min(box.zmin, face.zmin)
     box.xmax = max(max(max(box.xmax, x1), x2), x3)
     box.ymax = max(max(max(box.ymax, y1), y2), y3)
-    box.zmax = max(max(max(box.zmax, z1), z2), z3)
+    box.zmax = max(box.zmax, face.zmax)
 end
 
 function update!(box::Bounds2, line::LineSegment)

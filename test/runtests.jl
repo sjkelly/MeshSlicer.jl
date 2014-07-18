@@ -1,6 +1,7 @@
 #! /usr/bin/env julia
 
 using MeshSlicer
+using Lint
 using Base.Test
 using ImmutableArrays
 
@@ -151,3 +152,5 @@ a = MeshSlice(mesh, [eps()])
 @test length(a[1].polygons) == 1
 @test length(a[1].polygons[1].segments) == 4
 
+# run lint
+lintpkg("MeshSlicer")
